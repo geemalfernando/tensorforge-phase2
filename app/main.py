@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from app.jobs import JobManager
 from app.model import MODEL_PATH, MODEL_VERSION, TicketModel
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 logger = logging.getLogger("tensorforge")
 CHANNELS = {"email", "chat", "call_transcript"}
@@ -55,6 +55,42 @@ app.mount(
     StaticFiles(directory=str(Path(__file__).parent / "static")),
     name="static",
 )
+
+
+@app.middleware("http")
+async def dashboard_api_access(request: Request, call_next):
+    """Use the server's key for the public demo without exposing it to the browser."""
+    prefix = "/dashboard/api"
+    if request.url.path.startswith(prefix + "/"):
+        path = request.url.path[len(prefix):]
+        allowed = (
+            (path in {"/predict", "/predict/batch", "/batch/jobs"} and request.method == "POST")
+            or (path.startswith("/batch/jobs/") and request.method in {"GET", "DELETE"})
+        )
+        if not allowed:
+            return error_response(404, "not_found", "The requested resource was not found.")
+        origin = request.headers.get("origin")
+        expected_origin = "{}://{}".format(request.url.scheme, request.url.netloc)
+        if (
+            request.headers.get("X-TensorForge-Dashboard") != "1"
+            or request.headers.get("sec-fetch-site") == "cross-site"
+            or (origin is not None and origin != expected_origin)
+        ):
+            return error_response(403, "forbidden", "Dashboard requests must come from this site.")
+        key = os.environ.get("API_KEY")
+        if not key:
+            return error_response(503, "access_not_configured", "Set API_KEY in the server environment or .env.")
+        # Only the internal request receives the key; all direct API routes keep their auth checks.
+        request.scope["path"] = path
+        request.scope["raw_path"] = path.encode("utf-8")
+        request.scope["headers"] = [
+            (name, value) for name, value in request.scope["headers"]
+            if name.lower() not in {b"x-api-key", b"authorization"}
+        ] + [(b"x-api-key", key.encode("utf-8"))]
+        response = await call_next(request)
+        response.headers["Cache-Control"] = "no-store"
+        return response
+    return await call_next(request)
 
 
 @app.middleware("http")
@@ -239,6 +275,16 @@ def _job_manager() -> Optional[JobManager]:
 @app.get("/", include_in_schema=False)
 async def dashboard():
     return FileResponse(str(Path(__file__).parent / "static" / "index.html"))
+
+
+@app.get("/dashboard/status", include_in_schema=False)
+async def dashboard_access_status():
+    configured = bool(os.environ.get("API_KEY"))
+    return JSONResponse(
+        status_code=200 if configured else 503,
+        content={"configured": configured},
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @app.post("/auth/verify")

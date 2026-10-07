@@ -1,15 +1,12 @@
 const form = document.querySelector("#classify-form");
 const textField = document.querySelector("#text");
 const count = document.querySelector("#char-count");
-const keyDialog = document.querySelector("#key-dialog");
-const keyField = document.querySelector("#api-key");
 const errorBox = document.querySelector("#form-error");
 const classifyButton = document.querySelector("#classify-button");
-const keyButton = document.querySelector("#open-key");
+const accessStatus = document.querySelector("#service-access");
 const batchEditor = document.querySelector("#batch-json");
 const batchError = document.querySelector("#batch-error");
 const runBatchButton = document.querySelector("#run-batch");
-let apiKey = "";
 let lastPrediction = null;
 let healthRequest = null;
 let activeBatchJobId = null;
@@ -104,13 +101,14 @@ const batchExample = {
   ],
 };
 
-function showKeyDialog(message = "") {
-  keyField.value = apiKey;
-  const keyError = document.querySelector("#key-error");
-  keyError.textContent = message;
-  keyError.hidden = !message;
-  if (!keyDialog.open) keyDialog.showModal();
-  requestAnimationFrame(() => keyField.focus());
+async function checkDashboardAccess() {
+  try {
+    const response = await fetch("/dashboard/status", { cache: "no-store" });
+    const body = await response.json();
+    setServiceAccess(response.ok && body.configured);
+  } catch {
+    setServiceAccess(false);
+  }
 }
 
 async function setServiceHealth() {
@@ -137,11 +135,9 @@ async function setServiceHealth() {
   }
 }
 
-function setKeyConnected(connected) {
-  keyButton.classList.toggle("connected", connected);
-  keyButton.innerHTML = connected
-    ? '<span class="key-connected-dot"></span> Key connected <span class="key-icon">Change</span>'
-    : 'Connect API key <span class="key-icon">Secure</span>';
+function setServiceAccess(connected) {
+  accessStatus.classList.toggle("connected", connected);
+  accessStatus.textContent = connected ? "Service access ready" : "Service access unavailable";
 }
 
 function titleCase(value) {
@@ -190,17 +186,15 @@ function updateBatchCount() {
 }
 
 async function authorizedFetch(url, options = {}) {
-  const response = await fetch(url, {
+  const response = await fetch(`/dashboard/api${url}`, {
     ...options,
     headers: {
       ...options.headers,
-      "X-API-Key": apiKey,
+      "X-TensorForge-Dashboard": "1",
     },
   });
-  if (response.status === 401) {
-    apiKey = "";
-    setKeyConnected(false);
-    showKeyDialog("Your API key was rejected. Reconnect to continue.");
+  if (response.status === 401 || response.status === 503) {
+    checkDashboardAccess();
   }
   return response;
 }
@@ -283,10 +277,6 @@ async function runBatch() {
           tickets.length <= 100 ? "synchronous batch" : "job"
         } limit is ${maxBytes / (1024 * 1024)} MB.`,
       );
-    }
-    if (!apiKey) {
-      showKeyDialog();
-      throw new Error("Connect your team API key before running a batch.");
     }
 
     batchPredictions = null;
@@ -423,29 +413,17 @@ form.addEventListener("submit", async (event) => {
     textField.focus();
     return;
   }
-  if (!apiKey) {
-    setFormMessage("Connect your team API key to classify this ticket.");
-    showKeyDialog();
-    return;
-  }
 
   classifyButton.disabled = true;
   classifyButton.innerHTML = '<span class="loading-spinner"></span> Analyzing ticket…';
   classifyButton.setAttribute("aria-busy", "true");
-  let rejectedKey = false;
   try {
-    const response = await fetch("/predict", {
+    const response = await authorizedFetch("/predict", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(ticket),
     });
     const body = await response.json();
-    if (response.status === 401) {
-      apiKey = "";
-      setKeyConnected(false);
-      rejectedKey = true;
-      throw new Error("That key was not accepted. Check it and connect again.");
-    }
     if (!response.ok) {
       throw new Error(body.error?.message || "Could not classify this ticket.");
     }
@@ -453,7 +431,6 @@ form.addEventListener("submit", async (event) => {
     recordActivity([body]);
   } catch (error) {
     setFormMessage(error.message || "Could not reach the classification service.");
-    if (rejectedKey) showKeyDialog("That key was not accepted. Check it and try again.");
   } finally {
     classifyButton.disabled = false;
     classifyButton.removeAttribute("aria-busy");
@@ -493,53 +470,6 @@ document.querySelectorAll(".example-chip").forEach((button) => {
     textField.focus();
   });
 });
-document.querySelector("#open-key").addEventListener("click", () => showKeyDialog());
-document.querySelector("#save-key").addEventListener("click", async (event) => {
-  const candidate = keyField.value.trim();
-  const keyError = document.querySelector("#key-error");
-  if (!candidate) {
-    keyError.textContent = "Enter your API key to connect.";
-    keyError.hidden = false;
-    return;
-  }
-  const button = event.currentTarget;
-  button.disabled = true;
-  button.textContent = "Verifying…";
-  try {
-    const response = await fetch("/auth/verify", { method: "POST", headers: { "X-API-Key": candidate } });
-    if (!response.ok) {
-      const body = await response.json();
-      throw new Error(body.error?.message || "Could not verify API access.");
-    }
-    apiKey = candidate;
-    setKeyConnected(true);
-    keyField.value = "";
-    keyField.type = "password";
-    document.querySelector("#toggle-key").textContent = "Show";
-    document.querySelector("#toggle-key").setAttribute("aria-label", "Show API key");
-    keyDialog.close();
-    setFormMessage("");
-    setBatchError("");
-  } catch (error) {
-    keyError.textContent = error.message || "Could not reach the API.";
-    keyError.hidden = false;
-  } finally {
-    button.disabled = false;
-    button.innerHTML = 'Use key <span class="button-arrow">↗</span>';
-  }
-});
-document.querySelector("#clear-key").addEventListener("click", () => {
-  apiKey = "";
-  keyField.value = "";
-  setKeyConnected(false);
-  keyDialog.close();
-});
-document.querySelector("#toggle-key").addEventListener("click", (event) => {
-  const visible = keyField.type === "text";
-  keyField.type = visible ? "password" : "text";
-  event.currentTarget.textContent = visible ? "Show" : "Hide";
-  event.currentTarget.setAttribute("aria-label", visible ? "Show API key" : "Hide API key");
-});
 document.querySelector("#copy-result").addEventListener("click", async (event) => {
   if (!lastPrediction) return;
   const button = event.currentTarget;
@@ -556,7 +486,6 @@ document.querySelector("#copy-result").addEventListener("click", async (event) =
 document.addEventListener("keydown", (event) => {
   if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
     event.preventDefault();
-    if (keyDialog.open) return;
     if (!document.querySelector("#batch-mode").hidden) {
       if (!runBatchButton.disabled) runBatch();
     } else if (!classifyButton.disabled) form.requestSubmit();
@@ -663,6 +592,7 @@ syncChannelFields();
 updateCount();
 updateBatchCount();
 setServiceHealth();
+checkDashboardAccess();
 setInterval(setServiceHealth, 30000);
 
 document.querySelector("#reset-session").addEventListener("click", () => {

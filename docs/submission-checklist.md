@@ -4,7 +4,7 @@ Complete means verified with recorded evidence; a file or implementation alone i
 
 | Requirement | Current evidence | Remaining action |
 | --- | --- | --- |
-| End-to-end front end | Dashboard with single and batch workflows; desktop/mobile checks passed | Publish and verify a live demo URL |
+| End-to-end front end | Dashboard with single and batch workflows and automatic server-side key access; desktop/mobile checks passed | Publish and verify a live demo URL |
 | Official OpenAPI contract | Required endpoint paths implemented | Obtain `tensorforge-phase2-openapi-v2.yaml`; compare exact fields, enums, statuses, authorization, errors, and async size limits |
 | Official JSON Schemas | Application checks and API tests exist | Obtain organizer `schemas/` and bundle; validate all request/response variants, including team consistency |
 | API key privacy and reliability | `.env` ignored/excluded from image; configured key tested; 64 concurrent rounds of valid/invalid auth and health passed locally; public health | Configure the exact key on hosting; keep it unchanged for the evaluation window; repeat concurrent checks publicly |

@@ -45,7 +45,7 @@
           <div class="breadcrumbs"><span>Workspace</span><span class="crumb-slash">/</span><strong>Overview</strong></div>
           <div class="topbar-right">
             <span class="version-pill"><span class="version-dot"></span><span id="model-version">Model loading</span></span>
-            <button class="key-button" id="open-key">Connect API key <span class="key-icon">Secure</span></button>
+            <span class="key-button access-status" id="service-access" role="status">Checking service access</span>
             <a class="docs-link" href="/docs" target="_blank" rel="noopener">API docs ↗</a>
           </div>
         </header>
@@ -243,18 +243,6 @@
       </main>
     </div>
 
-    <dialog id="key-dialog" class="key-dialog">
-      <form method="dialog" class="dialog-close"><button aria-label="Close">×</button></form>
-      <div class="dialog-icon">⌑</div>
-      <div class="eyebrow small-eyebrow">API ACCESS</div>
-      <h2>Connect your evaluation key</h2>
-      <p>Connect to your team’s protected prediction API. Your key stays in this tab’s memory and is sent only to this app.</p>
-      <div id="key-error" class="inline-error dialog-error" role="alert" hidden></div>
-      <label class="field-label" for="api-key">API key</label>
-      <div class="key-input-wrap"><input id="api-key" type="password" autocomplete="off" placeholder="Paste your team key when you receive it" /><button type="button" id="toggle-key" aria-label="Show API key">Show</button></div>
-      <div class="dialog-actions"><button type="button" class="text-button" id="clear-key">Clear</button><button type="button" class="primary-button" id="save-key">Use key <span class="button-arrow">↗</span></button></div>
-      <div class="dialog-note"><span class="lock-icon">⌑</span>Not saved to browser storage. Clear it any time.</div>
-    </dialog>
     <script src="/static/app.js"></script>
   </body>
 </html>

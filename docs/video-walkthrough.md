@@ -1,6 +1,6 @@
 # 15-minute walkthrough recording plan
 
-This is a recording outline, not a completed video. Keep `.env`, terminal environment dumps, key input, and authorization headers out of the recording. Connect the dashboard before recording.
+This is a recording outline, not a completed video. Keep `.env`, terminal environment dumps, and authorization headers out of the recording. The dashboard connects automatically using server configuration.
 
 | Time | Demonstration and explanation |
 | --- | --- |

@@ -266,3 +266,34 @@ def test_all_prediction_and_job_routes_require_the_exact_key(client, method, pat
         response = getattr(client, method)(path, headers=supplied)
         assert response.status_code == 401
         assert response.json()["error"]["code"] == "unauthorized"
+
+
+def test_dashboard_uses_server_key_without_returning_it(client):
+    status = client.get("/dashboard/status")
+    assert status.json() == {"configured": True}
+    assert status.headers["cache-control"] == "no-store"
+    browser_headers = {"X-TensorForge-Dashboard": "1", "Origin": "http://testserver"}
+    response = client.post("/dashboard/api/predict", json=ticket(), headers=browser_headers)
+    assert response.status_code == 200
+    assert response.json()["ticket_id"] == "TF-TEST-1"
+    assert response.headers["cache-control"] == "no-store"
+    batch = client.post("/dashboard/api/predict/batch", json={"tickets": [ticket()]}, headers=browser_headers)
+    assert batch.status_code == 200
+    assert batch.json()["meta"]["count"] == 1
+    for resource in (status, response, batch, client.get("/"), client.get("/static/app.js")):
+        assert "test-evaluation-key" not in resource.text
+    assert 'id="api-key"' not in client.get("/").text
+    assert client.post("/predict", json=ticket()).status_code == 401
+
+
+def test_dashboard_access_rejects_cross_site_and_missing_configuration(client, monkeypatch):
+    path = "/dashboard/api/predict"
+    assert client.post(path, json=ticket()).status_code == 403
+    assert client.post(path, json=ticket(), headers={"X-TensorForge-Dashboard": "1", "Origin": "https://other.example"}).status_code == 403
+    assert client.post(path, json=ticket(), headers={"X-TensorForge-Dashboard": "1", "Sec-Fetch-Site": "cross-site"}).status_code == 403
+    assert client.get("/dashboard/api/health", headers={"X-TensorForge-Dashboard": "1"}).status_code == 404
+    monkeypatch.delenv("API_KEY")
+    assert client.get("/dashboard/status").json() == {"configured": False}
+    response = client.post(path, json=ticket(), headers={"X-TensorForge-Dashboard": "1"})
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "access_not_configured"

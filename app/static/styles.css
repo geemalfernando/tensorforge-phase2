@@ -260,6 +260,7 @@ button:disabled { cursor: wait; }
 .key-button.connected { border-color: #d9f0e8; color: #328d71; background: #f8fdfb; }
 .key-connected-dot { width: 6px; height: 6px; display: inline-block; border-radius: 50%; background: #22ae83; margin-right: 6px; }
 .key-button.connected .key-icon { color: #328d71; border-color: #e2f1eb; }
+.access-status { display: inline-flex; align-items: center; }
 .classify-panel { min-height: 0; }
 .field-row { gap: 15px; }
 .field-controls select, .field-controls input, #subject, textarea { border-radius: 7px; }

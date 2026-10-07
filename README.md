@@ -17,7 +17,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 For local development, put `API_KEY` in `.env`. It is loaded automatically, ignored by Git, and excluded from the Docker build. Deployment environment variables take precedence over values in `.env`.
 
-Open <http://localhost:8000> for the dashboard or <http://localhost:8000/docs> for the API explorer. `GET /health` is public. All inference and batch-job endpoints return `401` until `API_KEY` is set, and accept either `X-API-Key` or `Authorization: Bearer <your-team-key>`. The API never has a default key. The dashboard keeps a key in memory for the current tab only; it does not save it to local storage.
+Open <http://localhost:8000> for the dashboard or <http://localhost:8000/docs> for the API explorer. `GET /health` is public. All inference and batch-job endpoints return `401` until `API_KEY` is set, and accept either `X-API-Key` or `Authorization: Bearer <your-team-key>`. The API never has a default key. The dashboard automatically uses the configured server key through its same-origin demo bridge. The key is never returned to the browser or saved in browser storage.
 
 ## Docker
 
@@ -45,9 +45,9 @@ docker run -p 8000:8000 -e API_KEY='<your-team-key>' tensorforge-mvp
 
 ### Dashboard workflows
 
-The single-ticket tab supports chat, email subject/body, and call transcripts. Use the batch workbench to load or paste a JSON request: up to 100 tickets run synchronously, while 101–5,000 use the async job API with progress polling, cancellation, and JSON download. The browser requests the API key when the tab is connected; it is intentionally not embedded in dashboard code or copied from server environment into the browser.
+The single-ticket tab supports chat, email subject/body, and call transcripts. Use the batch workbench to load or paste a JSON request: up to 100 tickets run synchronously, while 101–5,000 use the async job API with progress polling, cancellation, and JSON download. The browser calls `/dashboard/api/...`; the server supplies its configured key internally. There is no API-key prompt. This is a public demo interface; direct prediction/job API routes still require the exact evaluation key. The bridge checks same-origin browser requests and never returns the key.
 
-The dashboard verifies a key before showing it as connected. Session counters track classified, urgent, and review-recommended tickets in the current tab. Batch results include a preview of up to 100 rows with urgent and human-review filters; JSON download includes the full batch. Counters reset on reload or with Reset counters. Ctrl/Cmd+Enter submits the selected workbench.
+The dashboard checks whether server access is configured and shows service readiness automatically. Session counters track classified, urgent, and review-recommended tickets in the current tab. Batch results include a preview of up to 100 rows with urgent and human-review filters; JSON download includes the full batch. Counters reset on reload or with Reset counters. Ctrl/Cmd+Enter submits the selected workbench.
 
 Request examples:
 
