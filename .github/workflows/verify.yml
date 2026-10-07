@@ -14,40 +14,7 @@ jobs:
       - run: pytest -q
       - run: python scripts/evaluate_model.py --output /tmp/evaluation-breakdown.json
       - run: docker build -t tensorforge-mvp .
-      - name: Verify offline runtime
-        shell: bash
-        run: |
-          docker run -d --network none --name tensorforge-offline -e API_KEY=ci-only-verification-key tensorforge-mvp
-          trap 'docker rm -f tensorforge-offline >/dev/null' EXIT
-          docker exec -i tensorforge-offline python - <<'PY'
-          import json, os, time, urllib.request
-          for attempt in range(60):
-              try:
-                  with urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2) as r:
-                      assert json.load(r)['status'] == 'ok'
-                  break
-              except Exception:
-                  if attempt == 59:
-                      raise
-                  time.sleep(1)
-          ticket = {'ticket_id': 'ci-offline', 'channel': 'chat', 'text': 'My food is late'}
-          headers = {'Content-Type': 'application/json', 'X-API-Key': os.environ['API_KEY']}
-          def request(path, payload=None):
-              req = urllib.request.Request('http://127.0.0.1:8000' + path,
-                  data=json.dumps(payload).encode() if payload is not None else None, headers=headers)
-              with urllib.request.urlopen(req, timeout=30) as r:
-                  return json.load(r)
-          assert request('/predict', ticket)['ticket_id'] == 'ci-offline'
-          assert request('/predict/batch', {'tickets': [ticket]})['meta']['count'] == 1
-          job = request('/batch/jobs', {'tickets': [ticket]})
-          for attempt in range(60):
-              status = request('/batch/jobs/' + job['job_id'])
-              if status['status'] == 'succeeded':
-                  break
-              assert status['status'] in ('queued', 'running')
-              time.sleep(1)
-          else:
-              raise RuntimeError('Offline job timed out')
-          assert request('/batch/jobs/' + job['job_id'] + '/results')['predictions'][0]['ticket_id'] == 'ci-offline'
-          print('Offline health, prediction, batch and jobs passed')
-          PY
+      - name: Verify published port and offline runtime
+        env:
+          API_KEY: ci-only-verification-key
+        run: python scripts/verify_container.py --image tensorforge-mvp

@@ -2,7 +2,7 @@
 
 The user selected Vercel as the existing hosting platform. The saved local credential returned HTTP 403 from Vercel's account API, so account access has not been established and no deployment has been created.
 
-Vercel supports FastAPI, but the current application needs a persistent SQLite job store and a process-level background worker. Vercel Functions have a read-only filesystem except for `/tmp`, and instances are isolated. Moving the job database to `/tmp` would not provide a durable, shared job store. The platform also caps function request/response payloads at 4.5 MB, below this application's 25 MB async request limit. Official organizer schemas are needed to confirm applicable request limits.
+Vercel supports FastAPI, but the current application needs a persistent SQLite job store and a process-level background worker. Vercel Functions have a read-only filesystem except for `/tmp`, and instances are isolated. Moving the job database to `/tmp` would not provide a durable, shared job store. The platform also caps function request/response payloads at 4.5 MB, below this application's 25 MB async request limit. The supplied OpenAPI contract confirms a 25 MB async request limit, which exceeds the Vercel Function payload cap.
 
 Sources: [FastAPI support](https://vercel.com/docs/frameworks/backend/fastapi), [runtime/filesystem behavior](https://vercel.com/docs/functions/runtimes), [function payload limits](https://vercel.com/docs/functions/limitations).
 

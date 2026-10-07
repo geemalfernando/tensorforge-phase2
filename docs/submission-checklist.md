@@ -5,11 +5,11 @@ Complete means verified with recorded evidence; a file or implementation alone i
 | Requirement | Current evidence | Remaining action |
 | --- | --- | --- |
 | End-to-end front end | Dashboard with single and batch workflows and automatic server-side key access; desktop/mobile checks passed | Publish and verify a live demo URL |
-| Official OpenAPI contract | Required endpoint paths implemented | Obtain `tensorforge-phase2-openapi-v2.yaml`; compare exact fields, enums, statuses, authorization, errors, and async size limits |
-| Official JSON Schemas | Application checks and API tests exist | Obtain organizer `schemas/` and bundle; validate all request/response variants, including team consistency |
+| Official OpenAPI contract | Supplied v2.1.0 saved as `tensorforge-phase2-openapi-v2.yaml`; 30 API/contract tests pass; matching contract served by `/docs` | Repeat contract checks against the deployed service |
+| Official JSON Schemas | Tests validate embedded OpenAPI schemas (nullable adapted) and prose team/secondary/spam consistency rules | Obtain separate organizer `schemas/` and draft-2020-12 bundle; validate against that exact bundle |
 | API key privacy and reliability | `.env` ignored/excluded from image; configured key tested; 64 concurrent rounds of valid/invalid auth and health passed locally; public health | Configure the exact key on hosting; keep it unchanged for the evaluation window; repeat concurrent checks publicly |
-| Large evaluation batch | Local 2,001-ticket submit/poll/results/order/delete passed using configured key; worker supports up to 5,000 | Record 2,001–5,000-ticket public-host evidence |
-| Offline container startup | Dockerfile includes saved artifact and port-8000 startup; CI workflow passes local actionlint | Local Docker daemon is unavailable; GitHub CI returned startup_failure without jobs on two attempts. Resolve execution access and record an offline container pass |
+| Large evaluation batch | Local 5,000-ticket ordered results passed while health/live predictions stayed responsive; container also passed 2,001 tickets offline | Record 2,001–5,000-ticket public-host evidence and reference-hardware checks |
+| Offline container startup | Built `tensorforge-phase2:contract-2.1`; published-port health ready in 1.467 s; 100-ticket sync and 2,001-ticket async passed with network disabled; evidence in `artifacts/container_verification.json` | Repeat on reference hardware; GitHub CI previously returned startup_failure before jobs started |
 | Hosted batch endpoint | Local API available | Provision hosting with persistent `/app/data`; one API process per SQLite store; test public authenticated endpoint |
 | GitHub repository | Private repository published at the URL below; main branch verified | Give judges repository access |
 | Video | `docs/video-walkthrough.md` contains a timed recording plan | Record 15 minutes; upload YouTube unlisted; verify viewing access |
@@ -39,4 +39,4 @@ For the offline check, exercise `/health`, authenticated `/predict`, and job sub
 
 After deployment, run `python scripts/verify_endpoint.py --base-url https://YOUR-TRUSTED-HOST` with the exact evaluation key configured in `.env` or `API_KEY`. This tests public health, authentication, single/synchronous prediction, and a 2,001-ticket async job, verifies result ordering, and discards the test job. Use `--job-size 5000` for the maximum-size check. This smoke test does not substitute for official schema validation.
 
-The selected hosting platform is Vercel. See `docs/vercel-hosting.md`: saved account authentication returned HTTP 403, and the current persistent SQLite/background worker architecture needs an appropriate backend or adaptation before a complete deployment.
+The selected hosting platform is Vercel. See `docs/vercel-hosting.md`: saved account authentication returned HTTP 403, and the current persistent SQLite/background worker architecture needs an appropriate backend or adaptation before a complete deployment. The supplied contract confirms the async request limit is 25 MB.

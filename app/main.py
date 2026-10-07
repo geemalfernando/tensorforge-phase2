@@ -44,7 +44,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="TensorForge 2.0 | RideEat Support Intelligence",
-    version=MODEL_VERSION,
+    version="2.1.0",
     description="Multilingual support-ticket classification trained on the supplied RideEat dataset.",
     lifespan=lifespan,
     docs_url="/docs",
@@ -55,6 +55,15 @@ app.mount(
     StaticFiles(directory=str(Path(__file__).parent / "static")),
     name="static",
 )
+
+
+def contract_openapi():
+    if app.openapi_schema is None:
+        app.openapi_schema = json.loads(Path(__file__).with_name("openapi.json").read_text(encoding="utf-8"))
+    return app.openapi_schema
+
+
+app.openapi = contract_openapi
 
 
 @app.middleware("http")
@@ -193,8 +202,23 @@ async def _read_json(request: Request, limit: int) -> Tuple[Optional[Any], Optio
                 413, "payload_too_large", "Request body exceeds the maximum allowed size."
             )
     try:
-        return json.loads(body), None
-    except (json.JSONDecodeError, UnicodeDecodeError):
+        def reject_non_json_number(value):
+            raise ValueError("Non-finite numbers are not valid JSON")
+
+        payload = json.loads(body.decode("utf-8"), parse_constant=reject_non_json_number)
+        # JSON escape sequences must not introduce unpaired Unicode surrogates.
+        pending = [payload]
+        while pending:
+            value = pending.pop()
+            if isinstance(value, str):
+                value.encode("utf-8")
+            elif isinstance(value, dict):
+                pending.extend(value.keys())
+                pending.extend(value.values())
+            elif isinstance(value, list):
+                pending.extend(value)
+        return payload, None
+    except (ValueError, UnicodeError, RecursionError):
         return None, error_response(400, "malformed_json", "Request body is not valid JSON.")
 
 

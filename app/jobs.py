@@ -208,6 +208,20 @@ class JobManager:
 
     def delete(self, job_id: str) -> bool:
         with self.lock, self._connect() as connection:
+            row = connection.execute("SELECT status FROM jobs WHERE job_id=?", (job_id,)).fetchone()
+            if row is None:
+                return False
+            if row["status"] in {"queued", "running"}:
+                finished = utc_now()
+                connection.execute(
+                    """
+                    UPDATE jobs SET status='cancelled', finished_at=?, expires_at=?,
+                        tickets_json='[]', results_json=NULL
+                    WHERE job_id=?
+                    """,
+                    (timestamp(finished), timestamp(finished + RETENTION), job_id),
+                )
+                return True
             cursor = connection.execute("DELETE FROM jobs WHERE job_id=?", (job_id,))
             return cursor.rowcount > 0
 

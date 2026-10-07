@@ -19,6 +19,8 @@ For local development, put `API_KEY` in `.env`. It is loaded automatically, igno
 
 Open <http://localhost:8000> for the dashboard or <http://localhost:8000/docs> for the API explorer. `GET /health` is public. All inference and batch-job endpoints return `401` until `API_KEY` is set, and accept either `X-API-Key` or `Authorization: Bearer <your-team-key>`. The API never has a default key. The dashboard automatically uses the configured server key through its same-origin demo bridge. The key is never returned to the browser or saved in browser storage.
 
+The organizer’s supplied OpenAPI v2.1.0 contract is saved in `tensorforge-phase2-openapi-v2.yaml`. `/openapi.json` and `/docs` use the matching `app/openapi.json`, which is bundled in the container. The API specification version is independent of the trained model version.
+
 ## Docker
 
 The image contains the trained model artifact, so no training data, network access, or model download is needed at runtime.
@@ -63,7 +65,7 @@ curl http://localhost:8000/predict/batch \
   -d '{"tickets":[{"ticket_id":"TF-1048","channel":"chat","text":"Order is late"}]}'
 ```
 
-The API validates the full batch before returning any predictions, preserves input order, echoes ticket IDs, and returns JSON errors for malformed, invalid, oversized, unauthorized, and unknown-route requests. Async jobs support idempotency keys, a one-running-plus-three-queued limit, persisted status/results, cancellation, restart marking, and 24-hour result retention.
+The API validates the full batch before returning any predictions, preserves input order, echoes ticket IDs, and returns JSON errors for malformed, invalid, oversized, unauthorized, and unknown-route requests. Async jobs accept 1–5,000 tickets and support idempotency keys, a one-running-plus-three-queued limit, persisted status/results, cancellation, restart marking, and 24-hour result retention (above the contract’s six-hour minimum). Deleting a queued/running job retains its `cancelled` status; deleting a finished job discards it.
 
 ## Model and evaluation
 
@@ -77,12 +79,23 @@ The script trains on `datasets/train.csv`, evaluates `datasets/validation.csv`, 
 
 Run `python scripts/evaluate_model.py` to reproduce scores for the saved model and write per-category, per-language, and confusion breakdowns to `artifacts/evaluation_breakdown.json`.
 
+Predictions with primary confidence below 0.5 set `needs_human_review` to `true`. Confidence is the model probability for the returned primary category; it has not been independently calibrated.
+
 ## Phase 2 submission
 
-Track verified requirements and missing evidence in [the submission checklist](docs/submission-checklist.md). A [report draft](docs/report.md) and [15-minute video outline](docs/video-walkthrough.md) are available. Official OpenAPI/schema compliance is pending receipt of the organizer's contract files; the application's generated `/docs` is not a replacement for them. Public hosting, video recording, and report PDF export are separate deliverables.
+Track verified requirements and missing evidence in [the submission checklist](docs/submission-checklist.md). A [report draft](docs/report.md) and [15-minute video outline](docs/video-walkthrough.md) are available. Contract tests validate responses against the supplied OpenAPI’s embedded schemas and check its prose consistency rules. OpenAPI 3.0 `nullable` is translated for the JSON Schema validator. The separate organizer `schemas/` bundle has not been provided, so validation against that bundle remains pending. Public hosting and video recording are separate deliverables.
 
 ## Tests
 
 ```bash
 pytest -q
 ```
+
+The 30 tests include validation against the supplied OpenAPI's embedded schemas and consistency rules. Reproduce container checks with:
+
+```bash
+docker build -t tensorforge-mvp .
+python scripts/verify_container.py --image tensorforge-mvp
+```
+
+The verification script loads `.env`, checks published-port readiness within 120 seconds, then runs inference, a 100-ticket batch, and a 2,001-ticket job in a separate container with `--network none`. It removes its temporary containers and never prints the API key. Saved local evidence is in `artifacts/container_verification.json` and `artifacts/contract_job_verification.json`; these are development-machine results, not reference-hardware or hosted measurements.

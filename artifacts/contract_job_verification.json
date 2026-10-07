@@ -1,0 +1,13 @@
+{
+  "contract_version": "2.1.0",
+  "contract_sha256": "866655b7f13d9f8778b3926d97daf062afc64d0b1c2a2521febb640224d8d00a",
+  "job_size": 5000,
+  "submit_seconds": 0.0206,
+  "completion_seconds": 1.4355,
+  "health_samples_during_job": 10,
+  "health_max_seconds": 0.0078,
+  "live_prediction_samples_during_job": 10,
+  "live_prediction_max_seconds": 0.0204,
+  "ordered_results_verified": true,
+  "environment": "Local TestClient on development machine, not reference hardware or public hosting"
+}
