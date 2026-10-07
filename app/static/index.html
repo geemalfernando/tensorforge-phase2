@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f7fb" />
+    <meta
+      name="description"
+      content="TensorForge classifies multilingual RideEat support tickets and routes them to the right team."
+    />
+    <title>TensorForge — Support Intelligence</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="/" aria-label="TensorForge home">
+          <span class="brand-mark"><span></span><span></span><span></span><span></span></span>
+          <span>tensorforge<span class="brand-dot">.</span></span>
+        </a>
+        <div class="workspace-label">WORKSPACE</div>
+        <nav aria-label="Main navigation">
+          <a class="nav-item active" href="#overview">
+            <span class="nav-icon grid-icon"></span>Overview
+          </a>
+          <a class="nav-item" href="#classifier">
+            <span class="nav-icon spark-icon">✳</span>Ticket classifier
+          </a>
+          <a class="nav-item" href="#model">
+            <span class="nav-icon chart-icon"></span>Model & evaluation
+          </a>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="sidebar-status"><span class="status-light"></span><span id="sidebar-health">Connecting to model</span></div>
+          <div class="user-card">
+            <div class="avatar">TF</div>
+            <div><strong>TensorForge</strong><small>Phase 2 · RideEat</small></div>
+            <span class="more">···</span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content" id="overview">
+        <header class="topbar">
+          <div class="breadcrumbs"><span>Workspace</span><span class="crumb-slash">/</span><strong>Overview</strong></div>
+          <div class="topbar-right">
+            <span class="version-pill"><span class="version-dot"></span><span id="model-version">Model loading</span></span>
+            <button class="key-button" id="open-key">Connect API key <span class="key-icon">Secure</span></button>
+            <a class="docs-link" href="/docs" target="_blank" rel="noopener">API docs ↗</a>
+          </div>
+        </header>
+
+        <section class="page-heading">
+          <div>
+            <div class="eyebrow"><span class="eyebrow-line"></span>LESS FRICTION. BETTER SUPPORT.</div>
+            <h1 id="greeting">Welcome<span class="heading-period">.</span></h1>
+            <p class="subtitle">Every message deserves the right team.<br />Turn multilingual tickets into clear next steps.</p>
+            <div class="hero-tags"><span>සිංහල · தமிழ் · English</span><span>11 support routes</span><span>Local inference</span></div>
+          </div>
+          <div class="heading-actions">
+            <div class="date-chip"><span class="calendar-icon">▦</span><span id="current-date"></span></div>
+            <a class="heading-cta" href="#classifier">Open triage desk <span>↘</span></a>
+          </div>
+        </section>
+
+        <section class="metrics-grid" aria-label="Workspace metrics">
+          <article class="metric-card">
+            <div class="metric-heading"><span>Training tickets</span><span class="metric-icon icon-slate">▤</span></div>
+            <div class="metric-value">4,000</div>
+            <div class="metric-foot"><span class="metric-label">synthetic RideEat tickets</span><span class="metric-tail">TRAIN SET</span></div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-heading"><span>Issue categories</span><span class="metric-icon icon-blue">◈</span></div>
+            <div class="metric-value">11</div>
+            <div class="metric-foot"><span class="metric-label">with automatic team routing</span><span class="metric-tail">ROUTES</span></div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-heading"><span>Languages & scripts</span><span class="metric-icon icon-violet">文</span></div>
+            <div class="metric-value">6<span class="value-unit"> types</span></div>
+            <div class="metric-foot"><span class="metric-label">English, Sinhala, Tamil & more</span><span class="metric-tail">UTF-8</span></div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-heading"><span>Service status</span><span class="metric-icon icon-green">⌁</span></div>
+            <div class="metric-value status-value"><span class="big-status-dot"></span><span id="service-status">Checking</span></div>
+            <div class="metric-foot"><span class="metric-label" id="service-status-caption">Loading model health</span><span class="metric-tail">LIVE</span></div>
+          </article>
+        </section>
+
+        <section class="session-strip" aria-label="Current tab activity" aria-live="polite">
+          <span class="session-title"><i></i> YOUR TRIAGE SESSION</span>
+          <span><strong id="session-total">0</strong> classified</span>
+          <span><strong id="session-urgent">0</strong> urgent</span>
+          <span><strong id="session-review">0</strong> need review</span>
+          <button class="text-button" id="reset-session" type="button">Reset counters</button>
+        </section>
+        <section class="work-grid" id="classifier">
+          <article class="panel classify-panel">
+            <div class="panel-heading">
+              <div><div class="eyebrow small-eyebrow">TICKET TRIAGE · WORKSPACE</div><h2>Classify and route</h2></div>
+              <span class="panel-icon">✳</span>
+            </div>
+            <p class="panel-description">Add a message to identify the main issue and the team best placed to help.</p>
+            <div class="mode-tabs" role="tablist" aria-label="Classification mode">
+              <button class="mode-tab active" id="single-tab" type="button" role="tab" aria-selected="true" aria-controls="single-mode">Single ticket <span>01</span></button>
+              <button class="mode-tab" id="batch-tab" type="button" role="tab" aria-selected="false" aria-controls="batch-mode">Batch workbench <span>01–5k</span></button>
+            </div>
+            <div id="single-mode" role="tabpanel" aria-labelledby="single-tab">
+            <div class="language-tags" aria-label="Supported languages">
+              <span>EN</span><span>සිං</span><span>த</span><span>SI-LATN</span><span>TA-LATN</span><span>MIXED</span>
+            </div>
+            <form id="classify-form">
+              <div class="field-row">
+                <label class="field-label" for="channel">Channel</label>
+                <label class="field-label" for="ticket-id">Ticket ID <span class="optional">OPTIONAL</span></label>
+              </div>
+              <div class="field-row field-controls">
+                <select id="channel" name="channel">
+                  <option value="chat">Live chat</option>
+                  <option value="email">Email</option>
+                  <option value="call_transcript">Call transcript</option>
+                </select>
+                <input id="ticket-id" name="ticket_id" maxlength="64" placeholder="e.g. TF-1048" />
+              </div>
+              <div class="subject-field" id="subject-field" hidden>
+                <label class="field-label subject-label" for="subject">Email subject</label>
+                <input id="subject" name="subject" maxlength="500" placeholder="Add the subject to improve email triage" />
+              </div>
+              <div class="message-label-row">
+                <label class="field-label" for="text">Customer message</label>
+                <span class="character-count"><span id="char-count">0</span> / 10,000</span>
+              </div>
+              <textarea id="text" name="text" maxlength="10000" required placeholder="Paste a customer support message in English, Sinhala, Tamil or a mix…"></textarea>
+              <div class="form-footer">
+                <button type="button" class="text-button" id="clear-form"><span>×</span> Clear form</button>
+                <button type="submit" class="primary-button" id="classify-button"><span class="button-spark">✳</span> Classify ticket <span class="button-arrow">↗</span></button>
+              </div>
+            </form>
+            <div id="form-error" class="inline-error" role="alert" hidden></div>
+            <div class="example-picker">
+              <div class="example-picker-heading"><span>NEW HERE?</span> Try a sample ticket</div>
+              <div class="example-chips" aria-label="Sample tickets">
+                <button type="button" class="example-chip" data-example="delay">Late delivery <span>↗</span></button>
+                <button type="button" class="example-chip" data-example="lost-item">Lost item <span>↗</span></button>
+                <button type="button" class="example-chip" data-example="urgent">Urgent medicine <span>↗</span></button>
+              </div>
+            </div>
+            <div class="privacy-note"><span class="lock-icon">⌑</span>Ticket text is processed by the local model and is not stored.</div>
+            </div>
+            <section id="batch-mode" role="tabpanel" aria-labelledby="batch-tab" hidden>
+              <div class="batch-intro">
+                <span class="batch-icon">▤</span>
+                <div><strong>Bring a batch. Get consistent routing.</strong><p>Paste a JSON request or load a saved batch. Up to 100 tickets run immediately; larger jobs run in the background.</p></div>
+              </div>
+              <label class="field-label batch-json-label" for="batch-json">Batch request JSON <span class="optional">UTF-8</span></label>
+              <textarea id="batch-json" class="batch-editor" spellcheck="false" aria-describedby="batch-help"></textarea>
+              <div class="batch-editor-footer">
+                <span id="batch-count">2 tickets · ready to run</span>
+                <label class="upload-button" for="batch-file">↑ Load JSON file</label>
+                <input id="batch-file" type="file" accept=".json,application/json" hidden />
+              </div>
+              <p id="batch-help" class="batch-help">Use <code>{"tickets":[{"ticket_id":"...","channel":"chat","text":"..."}]}</code>. Ticket IDs must be unique.</p>
+              <div id="batch-error" class="inline-error" role="alert" hidden></div>
+              <div class="batch-actions">
+                <button type="button" class="text-button" id="batch-example">Load sample</button>
+                <button type="button" class="primary-button" id="run-batch"><span class="button-spark">✳</span> Run batch <span class="button-arrow">↗</span></button>
+              </div>
+              <div class="batch-progress" id="batch-progress" aria-live="polite" hidden>
+                <div class="batch-progress-heading"><strong id="batch-status">Preparing batch</strong><span id="batch-progress-count">0 / 0</span></div>
+                <div class="batch-progress-track"><span id="batch-progress-fill"></span></div>
+                <p id="batch-progress-message">Results will appear when classification is complete.</p>
+                <button type="button" class="text-button cancel-job-button" id="cancel-batch" hidden>Cancel job</button>
+                <button type="button" class="text-button" id="download-batch" hidden>↓ Download predictions JSON</button>
+              </div>
+              <div class="privacy-note"><span class="lock-icon">⌑</span>Async job data is retained for up to 24 hours. Single-ticket text is not stored.</div>
+            </section>
+          </article>
+
+          <article class="panel result-panel" id="result-panel">
+            <div class="result-empty" id="result-empty">
+              <div class="empty-illustration"><span class="orbit orbit-one"></span><span class="orbit orbit-two"></span><span class="empty-core">✳</span><span class="empty-star star-one">✦</span><span class="empty-star star-two">·</span></div>
+              <div class="eyebrow small-eyebrow">PREDICTION PREVIEW</div>
+              <h2>Ready when you are</h2>
+              <p>Submit a ticket to see its category, urgency and recommended support team.</p>
+              <div class="empty-divider"><span></span><b>WHAT YOU'LL GET</b><span></span></div>
+              <div class="preview-items">
+                <span><i class="preview-dot blue-dot"></i>Issue category</span>
+                <span><i class="preview-dot violet-dot"></i>Team routing</span>
+                <span><i class="preview-dot orange-dot"></i>Urgency signal</span>
+              </div>
+            </div>
+            <div class="result-content" id="result-content" aria-live="polite" hidden>
+              <div class="panel-heading">
+                <div><div class="eyebrow small-eyebrow">MODEL PREDICTION</div><h2>Ticket analysis</h2></div>
+                <span class="result-badge"><span class="result-badge-dot"></span>Complete</span>
+              </div>
+              <p class="result-intro" id="result-intro">Recommended routing based on the message you submitted.</p>
+              <div class="result-category">
+                <div class="result-label">PRIMARY CATEGORY</div>
+                <div class="category-name" id="result-category"></div>
+                <div class="result-team"><span class="team-icon">↗</span><span id="result-team"></span></div>
+              </div>
+              <div class="result-details">
+                <div class="detail-row"><span>Confidence</span><strong id="result-confidence"></strong></div>
+                <div class="confidence-track"><span id="confidence-fill"></span></div>
+                <div class="detail-row secondary-row"><span>Secondary issue</span><strong id="result-secondary"></strong></div>
+                <div class="detail-row"><span>Attention level</span><strong id="result-urgent"></strong></div>
+                <div class="detail-row" id="review-row" hidden><span>Human review</span><strong class="review-value">Recommended</strong></div>
+              </div>
+              <div class="result-footer"><span>MODEL VERSION</span><code id="result-version"></code><button id="copy-result" class="copy-button">Copy JSON</button></div>
+            </div>
+          </article>
+        </section>
+
+        <section class="panel batch-results-panel" id="batch-results" hidden>
+          <div class="bottom-heading"><div><div class="eyebrow small-eyebrow">BATCH RESULTS</div><h2>Routing at a glance</h2></div><span id="batch-results-summary" class="directory-count"></span></div>
+          <div class="result-filters" role="group" aria-label="Filter batch results">
+            <button class="result-filter active" data-filter="all" aria-pressed="true">All tickets</button>
+            <button class="result-filter" data-filter="urgent" aria-pressed="false">Urgent</button>
+            <button class="result-filter" data-filter="review" aria-pressed="false">Needs review</button>
+          </div>
+          <div class="table-scroll" tabindex="0" role="region" aria-label="Batch predictions"><table><thead><tr><th>Ticket</th><th>Issue / support team</th><th>Confidence</th><th>Attention</th></tr></thead><tbody id="batch-results-body"></tbody></table></div>
+          <p class="metrics-note" id="batch-results-note"></p>
+        </section>
+        <section class="bottom-grid" id="model">
+          <article class="panel model-panel">
+            <div class="bottom-heading"><div><div class="eyebrow small-eyebrow">MODEL SNAPSHOT</div><h2>Workshop baseline</h2></div><span class="model-badge">CLASSICAL ML</span></div>
+            <p class="bottom-copy">TF-IDF + logistic regression, trained on synthetic RideEat tickets. Offline at runtime; no LLM calls.</p>
+            <div class="quality-metrics" aria-label="Held-out validation scores">
+              <div class="quality-metric"><div><span>Primary category</span><strong>62.9% <small>acc</small><i>64.9% macro-F1</i></strong></div><div class="quality-track"><span style="width: 62.9%"></span></div></div>
+              <div class="quality-metric"><div><span>Secondary category</span><strong>95.5% <small>acc</small><i>69.2% macro-F1</i></strong></div><div class="quality-track"><span style="width: 95.5%"></span></div></div>
+              <div class="quality-metric"><div><span>Urgency</span><strong>97.5% <small>acc</small><i>92.6% macro-F1</i></strong></div><div class="quality-track"><span style="width: 97.5%"></span></div></div>
+            </div>
+            <p class="metrics-note">Accuracy on 800 held-out workshop examples; real-world results may differ.</p>
+          </article>
+          <article class="panel categories-panel">
+            <div class="bottom-heading"><div><div class="eyebrow small-eyebrow">ROUTING DIRECTORY</div><h2>Support teams</h2></div><span class="directory-count">11 ROUTES</span></div>
+            <div class="team-list">
+              <span><i class="team-dot dot-blue"></i>Payments & Refunds</span><span><i class="team-dot dot-green"></i>Ride Operations</span><span><i class="team-dot dot-coral"></i>Lost & Found</span><span><i class="team-dot dot-violet"></i>Food Operations</span><span><i class="team-dot dot-orange"></i>Delivery Operations</span><span><i class="team-dot dot-yellow"></i>Restaurant Quality</span><span><i class="team-dot dot-sky"></i>Account Services</span><span><i class="team-dot dot-red"></i>Trust & Safety</span><span><i class="team-dot dot-indigo"></i>Tech Support</span><span><i class="team-dot dot-slate"></i>Front-line Support</span><span><i class="team-dot dot-gray"></i>Auto-close / Spam Filter</span>
+            </div>
+          </article>
+        </section>
+        <footer class="page-footer"><span>TensorForge 2.0 <span class="footer-separator">·</span> Phase 2 MVP</span><span>Made for better support, one ticket at a time <span class="footer-heart">✳</span></span></footer>
+      </main>
+    </div>
+
+    <dialog id="key-dialog" class="key-dialog">
+      <form method="dialog" class="dialog-close"><button aria-label="Close">×</button></form>
+      <div class="dialog-icon">⌑</div>
+      <div class="eyebrow small-eyebrow">API ACCESS</div>
+      <h2>Connect your evaluation key</h2>
+      <p>Connect to your team’s protected prediction API. Your key stays in this tab’s memory and is sent only to this app.</p>
+      <div id="key-error" class="inline-error dialog-error" role="alert" hidden></div>
+      <label class="field-label" for="api-key">API key</label>
+      <div class="key-input-wrap"><input id="api-key" type="password" autocomplete="off" placeholder="Paste your team key when you receive it" /><button type="button" id="toggle-key" aria-label="Show API key">Show</button></div>
+      <div class="dialog-actions"><button type="button" class="text-button" id="clear-key">Clear</button><button type="button" class="primary-button" id="save-key">Use key <span class="button-arrow">↗</span></button></div>
+      <div class="dialog-note"><span class="lock-icon">⌑</span>Not saved to browser storage. Clear it any time.</div>
+    </dialog>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

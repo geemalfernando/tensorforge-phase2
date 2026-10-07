@@ -1,0 +1,15 @@
+{
+  "name": "tensorforge",
+  "version": "1.0.0",
+  "description": "A multilingual RideEat support-ticket classifier, API, and browser dashboard. The classifier is a locally trained TF-IDF + logistic-regression model; predictions do not call an LLM or any external service.",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}

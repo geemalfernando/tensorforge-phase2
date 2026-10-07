@@ -1,0 +1,19 @@
+{
+  "model_version": "tf-phase2-baseline-1.2.1",
+  "training_examples": 4000,
+  "validation_examples": 800,
+  "validation": {
+    "category": {
+      "accuracy": 0.6288,
+      "macro_f1": 0.6495
+    },
+    "secondary_category": {
+      "accuracy": 0.955,
+      "macro_f1": 0.6922
+    },
+    "is_urgent": {
+      "accuracy": 0.975,
+      "macro_f1": 0.9264
+    }
+  }
+}

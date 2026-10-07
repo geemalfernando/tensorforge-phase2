@@ -1,0 +1,268 @@
+import json
+import time
+
+import pytest
+from fastapi.testclient import TestClient
+
+from app.main import app
+
+
+@pytest.fixture
+def client(monkeypatch, tmp_path):
+    monkeypatch.setenv("API_KEY", "test-evaluation-key")
+    monkeypatch.setenv("JOB_DB_PATH", str(tmp_path / "jobs.sqlite3"))
+    with TestClient(app) as test_client:
+        yield test_client
+
+
+def headers():
+    return {"X-API-Key": "test-evaluation-key"}
+
+
+def ticket(ticket_id="TF-TEST-1", text="The driver is late with my food"):
+    return {"ticket_id": ticket_id, "channel": "chat", "subject": "", "text": text}
+
+
+def test_health_is_public_and_dashboard_assets_load(client):
+    health = client.get("/health")
+    assert health.status_code == 200
+    assert health.json()["status"] == "ok"
+    assert health.json()["model_version"] == "tf-phase2-baseline-1.2.1"
+    assert "TensorForge" in client.get("/").text
+    assert client.get("/static/styles.css").status_code == 200
+
+
+def test_auth_happens_before_content_type_and_json_validation(client):
+    unauthorized = client.post("/predict", content="{", headers={"Content-Type": "text/plain"})
+    assert unauthorized.status_code == 401
+    assert unauthorized.json()["error"]["code"] == "unauthorized"
+    assert unauthorized.headers["www-authenticate"] == "Bearer"
+
+    malformed = client.post(
+        "/predict",
+        content="{",
+        headers={**headers(), "Content-Type": "application/json"},
+    )
+    assert malformed.status_code == 400
+    assert malformed.json()["error"]["code"] == "malformed_json"
+
+
+def test_verify_access_checks_key_without_classifying(client, monkeypatch):
+    assert client.post("/auth/verify").status_code == 401
+    assert client.post("/auth/verify", headers={"X-API-Key": "wrong"}).status_code == 401
+    verified = client.post("/auth/verify", headers=headers())
+    assert verified.status_code == 200
+    assert verified.json() == {"status": "authenticated"}
+    assert verified.headers["cache-control"] == "no-store"
+    assert "test-evaluation-key" not in verified.text
+    assert client.post("/auth/verify", headers={"Authorization": "Bearer test-evaluation-key"}).status_code == 200
+    monkeypatch.delenv("API_KEY")
+    assert client.post("/auth/verify", headers=headers()).status_code == 401
+
+
+def test_predictions_stay_closed_when_api_key_is_unset(client, monkeypatch):
+    monkeypatch.delenv("API_KEY")
+    response = client.post(
+        "/predict",
+        json={"channel": "chat", "text": "Please check my delivery"},
+        headers={"X-API-Key": "test-evaluation-key"},
+    )
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "unauthorized"
+
+
+def test_bearer_auth_and_content_type_and_size_errors(client):
+    authorized = client.post(
+        "/predict",
+        json={"channel": "chat", "text": "My meal is late"},
+        headers={"Authorization": "Bearer test-evaluation-key"},
+    )
+    assert authorized.status_code == 200
+
+    unsupported = client.post(
+        "/predict",
+        content="{}",
+        headers={**headers(), "Content-Type": "text/plain"},
+    )
+    assert unsupported.status_code == 415
+    assert unsupported.json()["error"]["code"] == "unsupported_media_type"
+
+    oversized = client.post(
+        "/predict",
+        content=json.dumps({"channel": "chat", "text": "x" * (1024 * 1024)}),
+        headers={**headers(), "Content-Type": "application/json"},
+    )
+    assert oversized.status_code == 413
+
+
+def test_single_prediction_shape_and_request_id_echo(client):
+    response = client.post(
+        "/predict",
+        json=ticket(),
+        headers={**headers(), "X-Request-ID": "request-abc"},
+    )
+    assert response.status_code == 200
+    prediction = response.json()
+    assert prediction["ticket_id"] == "TF-TEST-1"
+    assert prediction["category"] in {
+        "payment_refund",
+        "ride_trip_issue",
+        "lost_item",
+        "order_missing_wrong",
+        "delivery_delay",
+        "food_quality",
+        "account_promo",
+        "safety_conduct",
+        "app_technical",
+        "general_inquiry",
+        "spam_irrelevant",
+    }
+    assert prediction["team"]
+    assert prediction["model_version"] == "tf-phase2-baseline-1.2.1"
+    assert 0 <= prediction["confidence"] <= 1
+    assert prediction["secondary_category"] != prediction["category"]
+    assert response.headers["x-request-id"] == "request-abc"
+
+
+@pytest.mark.parametrize(
+    ("text", "expected_category", "expected_secondary", "urgent"),
+    [
+        (
+            "order eka late, refund ekak denna",
+            "delivery_delay",
+            "payment_refund",
+            False,
+        ),
+        (
+            "என் ஆர்டர்ல ஒரு ஐட்டம் வரல, பணம் திருப்பி தாங்க",
+            "order_missing_wrong",
+            "payment_refund",
+            False,
+        ),
+        (
+            "the driver took a wrong turn and is not stopping the car, I am scared",
+            "safety_conduct",
+            None,
+            True,
+        ),
+    ],
+)
+def test_documented_issue_precedence(client, text, expected_category, expected_secondary, urgent):
+    response = client.post(
+        "/predict",
+        json={"channel": "chat", "text": text},
+        headers=headers(),
+    )
+    assert response.status_code == 200
+    prediction = response.json()
+    assert prediction["category"] == expected_category
+    assert prediction["secondary_category"] == expected_secondary
+    assert prediction["is_urgent"] is urgent
+
+
+def test_resolved_safety_history_does_not_override_the_current_issue(client):
+    response = client.post(
+        "/predict",
+        json={
+            "channel": "chat",
+            "text": (
+                "The driver was not stopping and I was scared, but that issue was already "
+                "resolved. Now my order arrived with a missing item."
+            ),
+        },
+        headers=headers(),
+    )
+    assert response.status_code == 200
+    assert response.json()["category"] == "order_missing_wrong"
+
+
+def test_invalid_ticket_returns_structured_validation_error(client):
+    response = client.post(
+        "/predict",
+        json={"channel": "fax", "text": "  "},
+        headers=headers(),
+    )
+    assert response.status_code == 422
+    details = response.json()["error"]["details"]
+    assert {detail["field"] for detail in details} >= {"channel", "text"}
+
+
+def test_batch_is_atomic_and_preserves_ticket_order(client):
+    response = client.post(
+        "/predict/batch",
+        json={"tickets": [ticket("first"), ticket("second", "My bag is missing from the car")]},
+        headers=headers(),
+    )
+    assert response.status_code == 200
+    result = response.json()
+    assert [item["ticket_id"] for item in result["predictions"]] == ["first", "second"]
+    assert result["meta"]["count"] == 2
+    assert result["meta"]["model_version"] == "tf-phase2-baseline-1.2.1"
+
+    invalid = client.post(
+        "/predict/batch",
+        json={"tickets": [ticket("same"), ticket("same", "   ")]},
+        headers=headers(),
+    )
+    assert invalid.status_code == 422
+    assert [item["index"] for item in invalid.json()["error"]["details"]] == [1, 1]
+
+
+def test_async_job_idempotency_status_paging_and_delete(client):
+    payload = {"tickets": [ticket("async-a"), ticket("async-b", "My account login code does not work")]}
+    submitted = client.post(
+        "/batch/jobs",
+        json=payload,
+        headers={**headers(), "Idempotency-Key": "retryable-request"},
+    )
+    assert submitted.status_code == 202
+    job_id = submitted.json()["job_id"]
+    assert submitted.headers["location"] == "/batch/jobs/{}".format(job_id)
+
+    retried = client.post(
+        "/batch/jobs",
+        json=payload,
+        headers={**headers(), "Idempotency-Key": "retryable-request"},
+    )
+    assert retried.status_code == 202
+    assert retried.json()["job_id"] == job_id
+
+    deadline = time.monotonic() + 10
+    status = client.get("/batch/jobs/{}".format(job_id), headers=headers())
+    while status.json()["status"] in {"queued", "running"} and time.monotonic() < deadline:
+        time.sleep(0.02)
+        status = client.get("/batch/jobs/{}".format(job_id), headers=headers())
+    assert status.json()["status"] == "succeeded"
+    assert status.json()["processed"] == 2
+
+    page = client.get(
+        "/batch/jobs/{}/results?offset=0&limit=1".format(job_id),
+        headers=headers(),
+    )
+    assert page.status_code == 200
+    assert page.json()["next_offset"] == 1
+    assert page.json()["predictions"][0]["ticket_id"] == "async-a"
+    assert client.delete("/batch/jobs/{}".format(job_id), headers=headers()).status_code == 204
+    assert client.get("/batch/jobs/{}".format(job_id), headers=headers()).status_code == 404
+
+
+def test_unknown_routes_return_json(client):
+    response = client.get("/not-a-route")
+    assert response.status_code == 404
+    assert response.headers["content-type"].startswith("application/json")
+    assert "error" in response.json()
+
+
+@pytest.mark.parametrize("method,path", [
+    ("post", "/predict"),
+    ("post", "/predict/batch"),
+    ("post", "/batch/jobs"),
+    ("get", "/batch/jobs/unknown"),
+    ("get", "/batch/jobs/unknown/results"),
+    ("delete", "/batch/jobs/unknown"),
+])
+def test_all_prediction_and_job_routes_require_the_exact_key(client, method, path):
+    for supplied in ({}, {"X-API-Key": "wrong-key"}):
+        response = getattr(client, method)(path, headers=supplied)
+        assert response.status_code == 401
+        assert response.json()["error"]["code"] == "unauthorized"
