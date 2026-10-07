@@ -64,10 +64,19 @@ class JobManager:
                     started_at TEXT,
                     finished_at TEXT,
                     expires_at TEXT,
-                    error_json TEXT
+                    error_json TEXT,
+                    model_version TEXT
                 )
                 """
             )
+            columns = {row["name"] for row in connection.execute("PRAGMA table_info(jobs)")}
+            if "model_version" not in columns:
+                connection.execute("ALTER TABLE jobs ADD COLUMN model_version TEXT")
+            # Preserve the generating model when serving retained results after retraining.
+            for row in connection.execute("SELECT job_id, results_json FROM jobs WHERE model_version IS NULL"):
+                predictions = json.loads(row["results_json"]) if row["results_json"] else []
+                version = predictions[0].get("model_version", MODEL_VERSION) if predictions else MODEL_VERSION
+                connection.execute("UPDATE jobs SET model_version=? WHERE job_id=?", (version, row["job_id"]))
             now = utc_now()
             expiry = timestamp(now + RETENTION)
             connection.execute(
@@ -117,8 +126,8 @@ class JobManager:
                     """
                     INSERT INTO jobs (
                         job_id, idempotency_key, status, total, processed,
-                        tickets_json, created_at
-                    ) VALUES (?, ?, 'queued', ?, 0, ?, ?)
+                        tickets_json, created_at, model_version
+                    ) VALUES (?, ?, 'queued', ?, 0, ?, ?, ?)
                     """,
                     (
                         job_id,
@@ -126,6 +135,7 @@ class JobManager:
                         len(tickets),
                         json.dumps(tickets, ensure_ascii=False),
                         created_at,
+                        MODEL_VERSION,
                     ),
                 )
                 row = connection.execute(
@@ -147,7 +157,7 @@ class JobManager:
             "started_at": row["started_at"],
             "finished_at": row["finished_at"],
             "expires_at": row["expires_at"],
-            "model_version": MODEL_VERSION,
+            "model_version": row["model_version"] or MODEL_VERSION,
             "error": error,
         }
 
@@ -189,7 +199,7 @@ class JobManager:
                 "offset": offset,
                 "limit": page_limit,
                 "next_offset": next_offset,
-                "model_version": MODEL_VERSION,
+                "model_version": row["model_version"] or MODEL_VERSION,
                 "predictions": predictions[offset:end],
             },
             "ok",

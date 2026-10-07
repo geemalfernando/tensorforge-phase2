@@ -19,7 +19,7 @@ header/navigation approach, support queue layout, and case decision/evidence lay
 
 The ETA, fault, and claim-history models from ResolveX do not match this competition's
 text classification task. They are replaced by the existing trained category,
-secondary-category, and urgency TF-IDF/logistic-regression pipelines. All three run
+secondary-category, and urgency TF-IDF pipelines (logistic regression and calibrated linear SVM). All three run
 for every prediction. Training remains reproducible with scripts/train_model.py;
 no delivery model, Gemini call, payment integration or Supabase dependency is needed.
 
@@ -36,5 +36,5 @@ Build frontend: npm ci --prefix frontend && npm run build --prefix frontend.
 FastAPI serves the compiled UI at /. Docker builds the frontend in a Node stage,
 then bundles it with the model in the Python image; runtime needs no internet.
 
-Public hosting, the separate organizer schemas bundle, and recording/uploading the
+The organizer schemas are now bundled and checked. Public hosting and recording/uploading the
 walkthrough remain outstanding submission deliverables. See submission-checklist.md.

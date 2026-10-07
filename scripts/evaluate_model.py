@@ -7,6 +7,7 @@ from collections import Counter
 from pathlib import Path
 
 from sklearn.metrics import classification_report, confusion_matrix
+from jsonschema import Draft202012Validator
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -24,6 +25,10 @@ def main():
     with args.dataset.open(encoding="utf-8", newline="") as source:
         rows = list(csv.DictReader(source))
     predictions = TicketModel.load().predict_many(tickets)
+    bundle = json.loads((ROOT / "schemas/tensorforge-schemas.json").read_text(encoding="utf-8"))
+    validator = Draft202012Validator({**bundle, "$ref": "#/$defs/PredictResponse"})
+    for prediction in predictions:
+        validator.validate(prediction)
     predicted_categories = [p["category"] for p in predictions]
     labels = list(TEAM_BY_CATEGORY)
     groups = {}
@@ -39,6 +44,7 @@ def main():
         "dataset": args.dataset.name,
         "examples": len(tickets),
         "evaluation_note": "Development validation data informed model selection and thresholds; this is not an independent test score.",
+        "official_schema_valid_predictions": len(predictions),
         "validation": {
             "category": evaluate(categories, predicted_categories),
             "secondary_category": evaluate(secondary, [p["secondary_category"] or "__none__" for p in predictions]),

@@ -1,7 +1,7 @@
 """Check the organizer's supplied OpenAPI schemas, plus its prose consistency rules.
 
 OpenAPI 3.0 nullable is translated to JSON Schema anyOf solely for local validation.
-The separate organizer draft-2020-12 schema bundle is not supplied yet.
+Responses are also validated against the organizer's exact draft-2020-12 bundle.
 """
 import json
 import threading
@@ -29,6 +29,7 @@ def normalize(value):
 
 
 SCHEMAS = normalize(CONTRACT["components"]["schemas"])
+OFFICIAL_BUNDLE = json.loads((Path(__file__).resolve().parents[1] / "schemas/tensorforge-schemas.json").read_text(encoding="utf-8"))
 FORMAT_CHECKER = FormatChecker()
 assert "date-time" in FORMAT_CHECKER.checkers, "Install requirements-dev.txt to validate RFC 3339 timestamps"
 TEAMS = {}
@@ -41,6 +42,9 @@ for line in CONTRACT["info"]["description"].splitlines():
 def check_schema(name, value):
     document = {"$ref": "#/components/schemas/" + name, "components": {"schemas": SCHEMAS}}
     Draft202012Validator(document, format_checker=FORMAT_CHECKER).validate(value)
+    if name in OFFICIAL_BUNDLE["$defs"]:
+        official = {**OFFICIAL_BUNDLE, "$ref": "#/$defs/" + name}
+        Draft202012Validator(official, format_checker=FORMAT_CHECKER).validate(value)
 
 
 def check_response(path, method, response):
@@ -74,6 +78,27 @@ def check_prediction(prediction, ticket):
 
 def sample(ticket_id="contract-1"):
     return {"ticket_id": ticket_id, "channel": "chat", "text": "My food order is late"}
+
+
+def test_retained_results_keep_their_generating_model_version(client):
+    import sqlite3
+    manager = main._job_manager()
+    record, _ = manager.submit([sample("version-check")], None)
+    deadline = time.monotonic() + 10
+    while manager.get_status(record["job_id"])[0]["status"] != "succeeded":
+        assert time.monotonic() < deadline
+        time.sleep(.01)
+    with sqlite3.connect(str(manager.db_path)) as connection:
+        row = connection.execute("SELECT results_json FROM jobs WHERE job_id=?", (record["job_id"],)).fetchone()
+        predictions = json.loads(row[0])
+        predictions[0]["model_version"] = "previous-trained-version"
+        connection.execute("UPDATE jobs SET results_json=?, model_version=NULL WHERE job_id=?", (json.dumps(predictions), record["job_id"]))
+    # Exercise migration of a result created before model versions were persisted.
+    manager._initialize()
+    assert manager.get_status(record["job_id"])[0]["model_version"] == "previous-trained-version"
+    result, state = manager.get_results(record["job_id"], 0, None)
+    assert state == "ok"
+    assert result["model_version"] == result["predictions"][0]["model_version"] == "previous-trained-version"
 
 
 def test_published_docs_are_the_supplied_contract(client, monkeypatch):

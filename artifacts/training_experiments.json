@@ -1,0 +1,778 @@
+{
+  "previous_baseline": {
+    "category": {
+      "accuracy": 0.6288,
+      "macro_f1": 0.6495
+    },
+    "secondary_category": {
+      "accuracy": 0.955,
+      "macro_f1": 0.6922
+    },
+    "is_urgent": {
+      "accuracy": 0.975,
+      "macro_f1": 0.9264
+    }
+  },
+  "initial_internal_selection": {
+    "experiments": [
+      {
+        "target": "category",
+        "configuration": {
+          "estimator": "logistic_regression",
+          "C": 8.0,
+          "class_weight": null
+        },
+        "accuracy": 0.9812,
+        "macro_f1": 0.9763,
+        "fit_seconds": 10.811
+      },
+      {
+        "target": "category",
+        "configuration": {
+          "estimator": "logistic_regression",
+          "C": 40.0,
+          "class_weight": "balanced"
+        },
+        "accuracy": 0.9888,
+        "macro_f1": 0.9856,
+        "fit_seconds": 12.066
+      },
+      {
+        "target": "category",
+        "configuration": {
+          "estimator": "calibrated_svm",
+          "C": 1.0,
+          "class_weight": null
+        },
+        "accuracy": 0.99,
+        "macro_f1": 0.9875,
+        "fit_seconds": 3.181
+      },
+      {
+        "target": "category",
+        "configuration": {
+          "estimator": "calibrated_svm",
+          "C": 4.0,
+          "class_weight": "balanced"
+        },
+        "accuracy": 0.99,
+        "macro_f1": 0.9875,
+        "fit_seconds": 5.028
+      },
+      {
+        "target": "secondary_category",
+        "configuration": {
+          "estimator": "logistic_regression",
+          "C": 8.0,
+          "class_weight": null
+        },
+        "accuracy": 0.9775,
+        "macro_f1": 0.8938,
+        "fit_seconds": 4.678
+      },
+      {
+        "target": "secondary_category",
+        "configuration": {
+          "estimator": "logistic_regression",
+          "C": 40.0,
+          "class_weight": "balanced"
+        },
+        "accuracy": 0.995,
+        "macro_f1": 0.9817,
+        "fit_seconds": 5.757
+      },
+      {
+        "target": "secondary_category",
+        "configuration": {
+          "estimator": "calibrated_svm",
+          "C": 1.0,
+          "class_weight": null
+        },
+        "accuracy": 0.9962,
+        "macro_f1": 0.9843,
+        "fit_seconds": 1.103
+      },
+      {
+        "target": "secondary_category",
+        "configuration": {
+          "estimator": "calibrated_svm",
+          "C": 4.0,
+          "class_weight": "balanced"
+        },
+        "accuracy": 0.9962,
+        "macro_f1": 0.9843,
+        "fit_seconds": 1.695
+      },
+      {
+        "target": "is_urgent",
+        "configuration": {
+          "estimator": "logistic_regression",
+          "C": 8.0,
+          "class_weight": null
+        },
+        "accuracy": 0.9838,
+        "macro_f1": 0.946,
+        "fit_seconds": 0.77
+      },
+      {
+        "target": "is_urgent",
+        "configuration": {
+          "estimator": "logistic_regression",
+          "C": 40.0,
+          "class_weight": "balanced"
+        },
+        "accuracy": 0.9925,
+        "macro_f1": 0.9762,
+        "fit_seconds": 0.939
+      },
+      {
+        "target": "is_urgent",
+        "configuration": {
+          "estimator": "calibrated_svm",
+          "C": 1.0,
+          "class_weight": null
+        },
+        "accuracy": 0.9925,
+        "macro_f1": 0.9762,
+        "fit_seconds": 0.321
+      },
+      {
+        "target": "is_urgent",
+        "configuration": {
+          "estimator": "calibrated_svm",
+          "C": 4.0,
+          "class_weight": "balanced"
+        },
+        "accuracy": 0.9925,
+        "macro_f1": 0.9762,
+        "fit_seconds": 0.604
+      }
+    ],
+    "threshold_selection": {
+      "is_urgent": [
+        {
+          "threshold": 0.1,
+          "accuracy": 0.9925,
+          "macro_f1": 0.9771
+        },
+        {
+          "threshold": 0.2,
+          "accuracy": 0.9962,
+          "macro_f1": 0.9883
+        },
+        {
+          "threshold": 0.3,
+          "accuracy": 0.995,
+          "macro_f1": 0.9843
+        },
+        {
+          "threshold": 0.4,
+          "accuracy": 0.9925,
+          "macro_f1": 0.9762
+        },
+        {
+          "threshold": 0.5,
+          "accuracy": 0.9925,
+          "macro_f1": 0.9762
+        },
+        {
+          "threshold": 0.6,
+          "accuracy": 0.99,
+          "macro_f1": 0.9679
+        },
+        {
+          "threshold": 0.7,
+          "accuracy": 0.99,
+          "macro_f1": 0.9679
+        }
+      ],
+      "secondary_category": [
+        {
+          "threshold": 0.1,
+          "accuracy": 0.9962,
+          "macro_f1": 0.9813
+        },
+        {
+          "threshold": 0.2,
+          "accuracy": 0.9962,
+          "macro_f1": 0.9843
+        },
+        {
+          "threshold": 0.3,
+          "accuracy": 0.9962,
+          "macro_f1": 0.9843
+        },
+        {
+          "threshold": 0.4,
+          "accuracy": 0.9962,
+          "macro_f1": 0.9843
+        },
+        {
+          "threshold": 0.5,
+          "accuracy": 0.9962,
+          "macro_f1": 0.9843
+        },
+        {
+          "threshold": 0.6,
+          "accuracy": 0.9962,
+          "macro_f1": 0.9843
+        },
+        {
+          "threshold": 0.7,
+          "accuracy": 0.995,
+          "macro_f1": 0.977
+        }
+      ]
+    },
+    "source": {
+      "source_url": "https://drive.google.com/drive/folders/16S4yfPFzjbTQUb8uD8g0GPFCyK1LPWYm",
+      "drive_file_id": "1ZU7z87eJ3wadKbAjyhzB6bAW8PLfL0dD",
+      "archive_sha256": "6fd305419ab156e906cdaacc31c51e1b6ef014902f3802e85e6276430d55907f",
+      "download_date": "2026-10-07",
+      "notes": "Organizer synthetic workshop data; CSV bytes match previous local data. Replacement training changes configuration, not data provenance.",
+      "files": {
+        "DATA_NOTES.md": {
+          "sha256": "68358792c48e6800dc7afec6acfa8652237642dc51036a11cd3219e75023ac26",
+          "bytes": 3222
+        },
+        "train.csv": {
+          "sha256": "d4d360539b228575634d3dcbf65052b4538d61915c811ba46c34d0076f39c9b9",
+          "bytes": 2211821
+        },
+        "train.jsonl": {
+          "sha256": "5cf55e7dcec6a4ef46e3d978763be0397825840c67338922d93d292dc86ccb9a",
+          "bytes": 2671652
+        },
+        "validation.csv": {
+          "sha256": "6a98d3d394561924b5bfe194b0ad8990a55c779bdc9a173954dac8eec049e011",
+          "bytes": 449668
+        },
+        "validation.jsonl": {
+          "sha256": "9ce23b7a7b7f29f36416340bc2f68a23fdc0b81760e5f3eeb178eb33f6a41aaf",
+          "bytes": 541582
+        }
+      }
+    },
+    "train_sha256": "d4d360539b228575634d3dcbf65052b4538d61915c811ba46c34d0076f39c9b9",
+    "validation_sha256": "6a98d3d394561924b5bfe194b0ad8990a55c779bdc9a173954dac8eec049e011",
+    "selection_seed": 2026,
+    "selection_fit_examples": 3200,
+    "selection_examples": 800,
+    "selected_configurations": {
+      "category": {
+        "estimator": "calibrated_svm",
+        "C": 1.0,
+        "class_weight": null
+      },
+      "secondary_category": {
+        "estimator": "calibrated_svm",
+        "C": 1.0,
+        "class_weight": null
+      },
+      "is_urgent": {
+        "estimator": "logistic_regression",
+        "C": 40.0,
+        "class_weight": "balanced"
+      }
+    },
+    "feature_options": {
+      "normalize": true,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        6
+      ]
+    },
+    "selection_note": "Configuration and cutoffs chosen on a stratified split within train.csv. Supplied validation used only for final reporting; prior project versions inspected it."
+  },
+  "initial_final_validation": {
+    "category": {
+      "accuracy": 0.6088,
+      "macro_f1": 0.637
+    },
+    "secondary_category": {
+      "accuracy": 0.9563,
+      "macro_f1": 0.7116
+    },
+    "is_urgent": {
+      "accuracy": 0.9513,
+      "macro_f1": 0.8808
+    }
+  },
+  "primary_development_comparison": [
+    {
+      "estimator": "logistic_regression",
+      "C": 40,
+      "class_weight": "balanced",
+      "normalize": true,
+      "char_analyzer": "char_wb",
+      "char_ngram_range": [
+        2,
+        6
+      ],
+      "accuracy": 0.6212,
+      "macro_f1": 0.6411
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 8,
+      "class_weight": "balanced",
+      "normalize": true,
+      "char_analyzer": "char_wb",
+      "char_ngram_range": [
+        2,
+        6
+      ],
+      "accuracy": 0.62,
+      "macro_f1": 0.6416
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 100,
+      "class_weight": "balanced",
+      "normalize": true,
+      "char_analyzer": "char_wb",
+      "char_ngram_range": [
+        2,
+        6
+      ],
+      "accuracy": 0.6212,
+      "macro_f1": 0.6431
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 100,
+      "class_weight": "balanced",
+      "normalize": false,
+      "char_analyzer": "char_wb",
+      "char_ngram_range": [
+        2,
+        6
+      ],
+      "accuracy": 0.63,
+      "macro_f1": 0.6504
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 40,
+      "class_weight": "balanced",
+      "normalize": true,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        6
+      ],
+      "accuracy": 0.595,
+      "macro_f1": 0.6286
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 40,
+      "class_weight": "balanced",
+      "normalize": false,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        6
+      ],
+      "accuracy": 0.5875,
+      "macro_f1": 0.6218
+    }
+  ],
+  "rejected_boilerplate_cleaner": [
+    {
+      "estimator": "logistic_regression",
+      "C": 40,
+      "class_weight": "balanced",
+      "char_analyzer": "char_wb",
+      "boilerplate_cleaner": true,
+      "accuracy": 0.5663,
+      "macro_f1": 0.5787
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 8,
+      "class_weight": "balanced",
+      "char_analyzer": "char_wb",
+      "boilerplate_cleaner": true,
+      "accuracy": 0.56,
+      "macro_f1": 0.5722
+    },
+    {
+      "estimator": "calibrated_svm",
+      "C": 1,
+      "class_weight": "balanced",
+      "char_analyzer": "char_wb",
+      "boilerplate_cleaner": true,
+      "accuracy": 0.5687,
+      "macro_f1": 0.5893
+    },
+    {
+      "estimator": "calibrated_svm",
+      "C": 4,
+      "class_weight": "balanced",
+      "char_analyzer": "char_wb",
+      "boilerplate_cleaner": true,
+      "accuracy": 0.5687,
+      "macro_f1": 0.589
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 40,
+      "class_weight": "balanced",
+      "char_analyzer": "char",
+      "boilerplate_cleaner": true,
+      "accuracy": 0.56,
+      "macro_f1": 0.5803
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 8,
+      "class_weight": "balanced",
+      "char_analyzer": "char",
+      "boilerplate_cleaner": true,
+      "accuracy": 0.5625,
+      "macro_f1": 0.5822
+    },
+    {
+      "estimator": "calibrated_svm",
+      "C": 1,
+      "class_weight": "balanced",
+      "char_analyzer": "char",
+      "boilerplate_cleaner": true,
+      "accuracy": 0.5625,
+      "macro_f1": 0.5872
+    },
+    {
+      "estimator": "calibrated_svm",
+      "C": 4,
+      "class_weight": "balanced",
+      "char_analyzer": "char",
+      "boilerplate_cleaner": true,
+      "accuracy": 0.56,
+      "macro_f1": 0.5861
+    }
+  ],
+  "urgency_development_comparison": [
+    {
+      "estimator": "logistic_regression",
+      "C": 3,
+      "class_weight": null,
+      "normalize": false,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.1,
+      "accuracy": 0.8725,
+      "macro_f1": 0.7582
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 3,
+      "class_weight": null,
+      "normalize": false,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.2,
+      "accuracy": 0.975,
+      "macro_f1": 0.9264
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 3,
+      "class_weight": null,
+      "normalize": false,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.3,
+      "accuracy": 0.9688,
+      "macro_f1": 0.8989
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 3,
+      "class_weight": null,
+      "normalize": false,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.4,
+      "accuracy": 0.96,
+      "macro_f1": 0.8641
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 3,
+      "class_weight": null,
+      "normalize": false,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.5,
+      "accuracy": 0.955,
+      "macro_f1": 0.8426
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 3,
+      "class_weight": null,
+      "normalize": true,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.1,
+      "accuracy": 0.8688,
+      "macro_f1": 0.7535
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 3,
+      "class_weight": null,
+      "normalize": true,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.2,
+      "accuracy": 0.9762,
+      "macro_f1": 0.9297
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 3,
+      "class_weight": null,
+      "normalize": true,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.3,
+      "accuracy": 0.9712,
+      "macro_f1": 0.9082
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 3,
+      "class_weight": null,
+      "normalize": true,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.4,
+      "accuracy": 0.9613,
+      "macro_f1": 0.8693
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 3,
+      "class_weight": null,
+      "normalize": true,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.5,
+      "accuracy": 0.9575,
+      "macro_f1": 0.8535
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 8,
+      "class_weight": null,
+      "normalize": true,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.1,
+      "accuracy": 0.9213,
+      "macro_f1": 0.8266
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 8,
+      "class_weight": null,
+      "normalize": true,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.2,
+      "accuracy": 0.9762,
+      "macro_f1": 0.9297
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 8,
+      "class_weight": null,
+      "normalize": true,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.3,
+      "accuracy": 0.975,
+      "macro_f1": 0.9217
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 8,
+      "class_weight": null,
+      "normalize": true,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.4,
+      "accuracy": 0.97,
+      "macro_f1": 0.9036
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 8,
+      "class_weight": null,
+      "normalize": true,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.5,
+      "accuracy": 0.96,
+      "macro_f1": 0.8641
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 40,
+      "class_weight": "balanced",
+      "normalize": true,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.1,
+      "accuracy": 0.8625,
+      "macro_f1": 0.7458
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 40,
+      "class_weight": "balanced",
+      "normalize": true,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.2,
+      "accuracy": 0.9475,
+      "macro_f1": 0.8734
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 40,
+      "class_weight": "balanced",
+      "normalize": true,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.3,
+      "accuracy": 0.975,
+      "macro_f1": 0.9313
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 40,
+      "class_weight": "balanced",
+      "normalize": true,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.4,
+      "accuracy": 0.975,
+      "macro_f1": 0.9264
+    },
+    {
+      "estimator": "logistic_regression",
+      "C": 40,
+      "class_weight": "balanced",
+      "normalize": true,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.5,
+      "accuracy": 0.9775,
+      "macro_f1": 0.9313
+    }
+  ],
+  "selected_configuration": {
+    "models": {
+      "category": {
+        "estimator": "logistic_regression",
+        "C": 100,
+        "class_weight": "balanced",
+        "normalize": false,
+        "char_analyzer": "char_wb",
+        "char_ngram_range": [
+          2,
+          6
+        ]
+      },
+      "secondary_category": {
+        "estimator": "calibrated_svm",
+        "C": 1.0,
+        "class_weight": null,
+        "normalize": true,
+        "char_analyzer": "char",
+        "char_ngram_range": [
+          2,
+          6
+        ],
+        "threshold": 0.2
+      },
+      "is_urgent": {
+        "estimator": "logistic_regression",
+        "C": 40,
+        "class_weight": "balanced",
+        "normalize": true,
+        "char_analyzer": "char",
+        "char_ngram_range": [
+          2,
+          5
+        ],
+        "threshold": 0.3
+      }
+    },
+    "selection_note": "Compared candidates on a training-only split, then on the supplied development validation set after the first selected candidate regressed. Final configuration and thresholds use development validation; no independent holdout accuracy is claimed."
+  }
+}

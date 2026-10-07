@@ -1,12 +1,13 @@
 {
-  "model_version": "tf-phase2-baseline-1.2.1",
+  "model_version": "tf-phase2-drive-2.0.0",
   "dataset": "validation.csv",
   "examples": 800,
   "evaluation_note": "Development validation data informed model selection and thresholds; this is not an independent test score.",
+  "official_schema_valid_predictions": 800,
   "validation": {
     "category": {
-      "accuracy": 0.6288,
-      "macro_f1": 0.6495
+      "accuracy": 0.63,
+      "macro_f1": 0.6504
     },
     "secondary_category": {
       "accuracy": 0.955,
@@ -14,44 +15,44 @@
     },
     "is_urgent": {
       "accuracy": 0.975,
-      "macro_f1": 0.9264
+      "macro_f1": 0.9313
     }
   },
   "category_report": {
     "payment_refund": {
-      "precision": 0.5108695652173914,
-      "recall": 0.6527777777777778,
-      "f1-score": 0.5731707317073171,
+      "precision": 0.510752688172043,
+      "recall": 0.6597222222222222,
+      "f1-score": 0.5757575757575757,
       "support": 144.0
     },
     "ride_trip_issue": {
-      "precision": 0.8163265306122449,
-      "recall": 0.7142857142857143,
-      "f1-score": 0.7619047619047619,
+      "precision": 0.8181818181818182,
+      "recall": 0.7232142857142857,
+      "f1-score": 0.7677725118483413,
       "support": 112.0
     },
     "lost_item": {
-      "precision": 0.5471698113207547,
+      "precision": 0.5272727272727272,
       "recall": 0.725,
-      "f1-score": 0.6236559139784946,
+      "f1-score": 0.6105263157894736,
       "support": 40.0
     },
     "order_missing_wrong": {
-      "precision": 0.41333333333333333,
-      "recall": 0.3229166666666667,
-      "f1-score": 0.3625730994152047,
+      "precision": 0.43243243243243246,
+      "recall": 0.3333333333333333,
+      "f1-score": 0.3764705882352941,
       "support": 96.0
     },
     "delivery_delay": {
-      "precision": 0.6592592592592592,
-      "recall": 0.7416666666666667,
-      "f1-score": 0.6980392156862745,
+      "precision": 0.6518518518518519,
+      "recall": 0.7333333333333333,
+      "f1-score": 0.6901960784313725,
       "support": 120.0
     },
     "food_quality": {
-      "precision": 0.6410256410256411,
-      "recall": 0.44642857142857145,
-      "f1-score": 0.5263157894736842,
+      "precision": 0.631578947368421,
+      "recall": 0.42857142857142855,
+      "f1-score": 0.5106382978723404,
       "support": 56.0
     },
     "account_promo": {
@@ -61,9 +62,9 @@
       "support": 72.0
     },
     "safety_conduct": {
-      "precision": 0.6896551724137931,
+      "precision": 0.7142857142857143,
       "recall": 0.625,
-      "f1-score": 0.6557377049180328,
+      "f1-score": 0.6666666666666666,
       "support": 32.0
     },
     "app_technical": {
@@ -73,9 +74,9 @@
       "support": 64.0
     },
     "general_inquiry": {
-      "precision": 0.5344827586206896,
+      "precision": 0.5535714285714286,
       "recall": 0.775,
-      "f1-score": 0.6326530612244898,
+      "f1-score": 0.6458333333333333,
       "support": 40.0
     },
     "spam_irrelevant": {
@@ -84,17 +85,17 @@
       "f1-score": 1.0,
       "support": 24.0
     },
-    "accuracy": 0.62875,
+    "accuracy": 0.63,
     "macro avg": {
-      "precision": 0.6661813716069204,
-      "recall": 0.6516369047619048,
-      "f1-score": 0.6495347149646858,
+      "precision": 0.668709147637223,
+      "recall": 0.6516459235209235,
+      "f1-score": 0.6504266322034256,
       "support": 800.0
     },
     "weighted avg": {
-      "precision": 0.6403193742267714,
-      "recall": 0.62875,
-      "f1-score": 0.6260649010402999,
+      "precision": 0.6420223898131369,
+      "recall": 0.63,
+      "f1-score": 0.6271855137854654,
       "support": 800.0
     }
   },
@@ -114,27 +115,27 @@
     ],
     "rows_actual_columns_predicted": [
       [
-        94,
+        95,
         2,
-        11,
-        7,
+        12,
+        6,
         6,
         4,
         1,
         0,
         6,
-        13,
+        12,
         0
       ],
       [
-        12,
-        80,
+        11,
+        81,
         0,
         2,
-        6,
-        0,
-        0,
         7,
+        0,
+        0,
+        6,
         2,
         3,
         0
@@ -143,8 +144,8 @@
         1,
         3,
         29,
-        2,
-        2,
+        1,
+        3,
         2,
         0,
         0,
@@ -153,10 +154,10 @@
         0
       ],
       [
-        33,
+        32,
         2,
         8,
-        31,
+        32,
         12,
         5,
         1,
@@ -166,25 +167,25 @@
         0
       ],
       [
-        13,
+        14,
         1,
-        0,
+        1,
         11,
-        89,
+        88,
         1,
         3,
         0,
         0,
-        2,
+        1,
         0
       ],
       [
-        6,
+        7,
         3,
         0,
         12,
         9,
-        25,
+        24,
         0,
         0,
         0,
@@ -218,11 +219,11 @@
         0
       ],
       [
-        7,
+        8,
         0,
         0,
         9,
-        3,
+        2,
         2,
         8,
         2,
@@ -262,7 +263,7 @@
     "en": {
       "count": 280,
       "accuracy": 0.5393,
-      "macro_f1": 0.5871
+      "macro_f1": 0.5849
     },
     "mixed": {
       "count": 20,
@@ -271,18 +272,18 @@
     },
     "si": {
       "count": 160,
-      "accuracy": 0.4562,
-      "macro_f1": 0.4825
+      "accuracy": 0.4625,
+      "macro_f1": 0.4924
     },
     "singlish": {
       "count": 200,
-      "accuracy": 0.9,
-      "macro_f1": 0.9063
+      "accuracy": 0.905,
+      "macro_f1": 0.9098
     },
     "ta": {
       "count": 120,
-      "accuracy": 0.625,
-      "macro_f1": 0.576
+      "accuracy": 0.6167,
+      "macro_f1": 0.5712
     },
     "tanglish": {
       "count": 20,
@@ -294,26 +295,16 @@
     {
       "actual": "order_missing_wrong",
       "predicted": "payment_refund",
-      "count": 33
+      "count": 32
     },
     {
       "actual": "delivery_delay",
       "predicted": "payment_refund",
-      "count": 13
-    },
-    {
-      "actual": "payment_refund",
-      "predicted": "general_inquiry",
-      "count": 13
+      "count": 14
     },
     {
       "actual": "order_missing_wrong",
       "predicted": "delivery_delay",
-      "count": 12
-    },
-    {
-      "actual": "ride_trip_issue",
-      "predicted": "payment_refund",
       "count": 12
     },
     {
@@ -322,13 +313,23 @@
       "count": 12
     },
     {
+      "actual": "payment_refund",
+      "predicted": "lost_item",
+      "count": 12
+    },
+    {
+      "actual": "payment_refund",
+      "predicted": "general_inquiry",
+      "count": 12
+    },
+    {
       "actual": "delivery_delay",
       "predicted": "order_missing_wrong",
       "count": 11
     },
     {
-      "actual": "payment_refund",
-      "predicted": "lost_item",
+      "actual": "ride_trip_issue",
+      "predicted": "payment_refund",
       "count": 11
     },
     {
@@ -342,5 +343,5 @@
       "count": 9
     }
   ],
-  "human_review_count": 540
+  "human_review_count": 485
 }

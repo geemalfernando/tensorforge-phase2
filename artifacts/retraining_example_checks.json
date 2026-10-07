@@ -1,0 +1,38 @@
+[
+  {
+    "text": "badu nati una",
+    "prediction": {
+      "category": "lost_item",
+      "secondary_category": null,
+      "team": "Lost & Found",
+      "is_urgent": false,
+      "confidence": 0.31569903783596,
+      "model_version": "tf-phase2-drive-2.0.0",
+      "needs_human_review": true
+    }
+  },
+  {
+    "text": "ride eke mage bag eka amathaka una",
+    "prediction": {
+      "category": "lost_item",
+      "secondary_category": null,
+      "team": "Lost & Found",
+      "is_urgent": false,
+      "confidence": 0.9986108820213783,
+      "model_version": "tf-phase2-drive-2.0.0",
+      "needs_human_review": false
+    }
+  },
+  {
+    "text": "order eke badu adui, packet eke item ekak na",
+    "prediction": {
+      "category": "order_missing_wrong",
+      "secondary_category": null,
+      "team": "Food Operations",
+      "is_urgent": false,
+      "confidence": 0.9501679187048422,
+      "model_version": "tf-phase2-drive-2.0.0",
+      "needs_human_review": false
+    }
+  }
+]

@@ -1,0 +1,40 @@
+{
+  "models": {
+    "category": {
+      "estimator": "logistic_regression",
+      "C": 100,
+      "class_weight": "balanced",
+      "normalize": false,
+      "char_analyzer": "char_wb",
+      "char_ngram_range": [
+        2,
+        6
+      ]
+    },
+    "secondary_category": {
+      "estimator": "calibrated_svm",
+      "C": 1.0,
+      "class_weight": null,
+      "normalize": true,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        6
+      ],
+      "threshold": 0.2
+    },
+    "is_urgent": {
+      "estimator": "logistic_regression",
+      "C": 40,
+      "class_weight": "balanced",
+      "normalize": true,
+      "char_analyzer": "char",
+      "char_ngram_range": [
+        2,
+        5
+      ],
+      "threshold": 0.3
+    }
+  },
+  "selection_note": "Compared candidates on a training-only split, then on the supplied development validation set after the first selected candidate regressed. Final configuration and thresholds use development validation; no independent holdout accuracy is claimed."
+}

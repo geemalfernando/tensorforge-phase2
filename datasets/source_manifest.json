@@ -1,0 +1,29 @@
+{
+  "source_url": "https://drive.google.com/drive/folders/16S4yfPFzjbTQUb8uD8g0GPFCyK1LPWYm",
+  "drive_file_id": "1ZU7z87eJ3wadKbAjyhzB6bAW8PLfL0dD",
+  "archive_sha256": "6fd305419ab156e906cdaacc31c51e1b6ef014902f3802e85e6276430d55907f",
+  "download_date": "2026-10-07",
+  "notes": "Organizer synthetic workshop data; CSV bytes match previous local data. Replacement training changes configuration, not data provenance.",
+  "files": {
+    "DATA_NOTES.md": {
+      "sha256": "68358792c48e6800dc7afec6acfa8652237642dc51036a11cd3219e75023ac26",
+      "bytes": 3222
+    },
+    "train.csv": {
+      "sha256": "d4d360539b228575634d3dcbf65052b4538d61915c811ba46c34d0076f39c9b9",
+      "bytes": 2211821
+    },
+    "train.jsonl": {
+      "sha256": "5cf55e7dcec6a4ef46e3d978763be0397825840c67338922d93d292dc86ccb9a",
+      "bytes": 2671652
+    },
+    "validation.csv": {
+      "sha256": "6a98d3d394561924b5bfe194b0ad8990a55c779bdc9a173954dac8eec049e011",
+      "bytes": 449668
+    },
+    "validation.jsonl": {
+      "sha256": "9ce23b7a7b7f29f36416340bc2f68a23fdc0b81760e5f3eeb178eb33f6a41aaf",
+      "bytes": 541582
+    }
+  }
+}

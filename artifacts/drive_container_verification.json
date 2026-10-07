@@ -1,0 +1,9 @@
+{
+  "image": "tensorforge-phase2:drive-2.0",
+  "image_id": "sha256:63ebed54be79a51ee1a2fae8dce68e8527243ffcf8e8c26cfff22c7b982e06eb",
+  "published_port_ready_seconds": 1.414,
+  "model_version": "tf-phase2-drive-2.0.0",
+  "sync_batch_size": 100,
+  "async_job_size": 2001,
+  "offline_runtime_passed": true
+}

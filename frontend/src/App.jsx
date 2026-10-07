@@ -729,10 +729,14 @@ export default function App() {
                 {models?.training_examples?.toLocaleString() || "4,000"}{" "}
                 synthetic RideEat tickets with word and character TF-IDF
                 features. The {models?.validation_examples || 800}-ticket
-                validation split informed tuning; these are development scores.
+                validation split is used for reporting. Configurations and
+                thresholds were compared on training and validation data.
+                These are development scores; the judges' unseen data is the
+                independent test.
                 Predictions use all three classifiers, then enforce category
                 precedence and the fixed category-to-team map. Primary
-                confidence below 50% recommends human review.
+                confidence below 50% or very little message context recommends
+                human review.
               </p>
               <p className="mt-3 text-xs text-slate-400">
                 Artifact: {models?.model_version || "Loading"} · No model

@@ -1,7 +1,9 @@
 import json
+import re
 import time
 
 import pytest
+from app.model import MODEL_VERSION
 def headers():
     return {"X-API-Key": "test-evaluation-key"}
 
@@ -14,9 +16,10 @@ def test_health_is_public_and_dashboard_assets_load(client):
     health = client.get("/health")
     assert health.status_code == 200
     assert health.json()["status"] == "ok"
-    assert health.json()["model_version"] == "tf-phase2-baseline-1.2.1"
+    assert health.json()["model_version"] == MODEL_VERSION
     assert "TensorForge" in client.get("/").text
-    assert client.get("/static/styles.css").status_code == 200
+    stylesheet = re.search(r'href="([^\"]+\.css)"', client.get("/").text).group(1)
+    assert client.get(stylesheet).status_code == 200
 
 
 def test_dashboard_reports_three_real_models_without_secrets(client):
@@ -116,7 +119,7 @@ def test_single_prediction_shape_and_request_id_echo(client):
         "spam_irrelevant",
     }
     assert prediction["team"]
-    assert prediction["model_version"] == "tf-phase2-baseline-1.2.1"
+    assert prediction["model_version"] == MODEL_VERSION
     assert 0 <= prediction["confidence"] <= 1
     assert prediction["secondary_category"] != prediction["category"]
     assert response.headers["x-request-id"] == "request-abc"
@@ -195,7 +198,14 @@ def test_batch_is_atomic_and_preserves_ticket_order(client):
     result = response.json()
     assert [item["ticket_id"] for item in result["predictions"]] == ["first", "second"]
     assert result["meta"]["count"] == 2
-    assert result["meta"]["model_version"] == "tf-phase2-baseline-1.2.1"
+    assert result["meta"]["model_version"] == MODEL_VERSION
+
+
+def test_short_ambiguous_singlish_ticket_is_flagged_for_review(client):
+    response = client.post("/predict", json=ticket(text="badu nati una"), headers=headers())
+    assert response.status_code == 200
+    assert response.json()["needs_human_review"] is True
+    assert response.json()["is_urgent"] is False
 
     invalid = client.post(
         "/predict/batch",
@@ -278,7 +288,11 @@ def test_dashboard_uses_server_key_without_returning_it(client):
     batch = client.post("/dashboard/api/predict/batch", json={"tickets": [ticket()]}, headers=browser_headers)
     assert batch.status_code == 200
     assert batch.json()["meta"]["count"] == 1
-    for resource in (status, response, batch, client.get("/"), client.get("/static/app.js")):
+    html = client.get("/")
+    script = re.search(r'src="([^\"]+\.js)"', html.text).group(1)
+    javascript = client.get(script)
+    assert javascript.status_code == 200
+    for resource in (status, response, batch, html, javascript):
         assert "test-evaluation-key" not in resource.text
     assert 'id="api-key"' not in client.get("/").text
     assert client.post("/predict", json=ticket()).status_code == 401

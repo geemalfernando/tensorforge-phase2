@@ -7,8 +7,11 @@ import joblib
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import FeatureUnion, Pipeline
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.svm import LinearSVC
+from app.preprocessing import normalize_ticket_text
 
-MODEL_VERSION = "tf-phase2-baseline-1.2.1"
+MODEL_VERSION = "tf-phase2-drive-2.0.0"
 MODEL_PATH = Path(__file__).resolve().parent.parent / "artifacts" / "model.joblib"
 URGENT_THRESHOLD = 0.2
 SECONDARY_THRESHOLD = 0.1
@@ -41,6 +44,8 @@ def make_classifier(
     class_weight: Any = None,
     char_analyzer: str = "char",
     char_ngram_range: tuple = (2, 5),
+    estimator: str = "logistic_regression",
+    normalize: bool = False,
 ) -> Pipeline:
     features = FeatureUnion(
         [
@@ -52,16 +57,18 @@ def make_classifier(
                     min_df=2,
                     max_features=150000,
                     sublinear_tf=True,
+                    preprocessor=normalize_ticket_text if normalize else None,
                 ),
             ),
             (
                 "character",
                 TfidfVectorizer(
                     analyzer=char_analyzer,
-                    ngram_range=char_ngram_range,
+                    ngram_range=tuple(char_ngram_range),
                     min_df=2,
                     max_features=300000,
                     sublinear_tf=True,
+                    preprocessor=normalize_ticket_text if normalize else None,
                 ),
             ),
         ]
@@ -71,7 +78,11 @@ def make_classifier(
             ("features", features),
             (
                 "classifier",
-                LogisticRegression(
+                CalibratedClassifierCV(
+                    estimator=LinearSVC(C=C, class_weight=class_weight, max_iter=5000,
+                                        random_state=42, dual=True),
+                    method="sigmoid", cv=3,
+                ) if estimator == "calibrated_svm" else LogisticRegression(
                     C=C,
                     class_weight=class_weight,
                     max_iter=300,
@@ -89,6 +100,9 @@ class TicketModel:
         self.category_model = artifact["category_model"]
         self.secondary_model = artifact["secondary_model"]
         self.urgent_model = artifact["urgent_model"]
+        self.urgent_threshold = artifact.get("urgent_threshold", URGENT_THRESHOLD)
+        self.secondary_threshold = artifact.get("secondary_threshold", SECONDARY_THRESHOLD)
+        self.training_metadata = artifact.get("training_metadata", {})
 
     @classmethod
     def load(cls, path: Path = MODEL_PATH) -> "TicketModel":
@@ -127,17 +141,17 @@ class TicketModel:
             secondary = None
             if (
                 secondary_index is not None
-                and secondary_probabilities[index][secondary_index] >= SECONDARY_THRESHOLD
+                and secondary_probabilities[index][secondary_index] >= self.secondary_threshold
             ):
                 secondary = str(secondary_labels[secondary_index])
 
             category, secondary = self._apply_precedence(
-                compose_text(ticket), category, secondary
+                normalize_ticket_text(compose_text(ticket)), category, secondary
             )
             confidence_index = list(category_labels).index(category)
             confidence = float(category_probabilities[index][confidence_index])
             is_urgent = (
-                urgent_probabilities[index][urgent_true_index] >= URGENT_THRESHOLD
+                urgent_probabilities[index][urgent_true_index] >= self.urgent_threshold
             )
             if category == "spam_irrelevant":
                 secondary = None
@@ -150,7 +164,7 @@ class TicketModel:
                 "is_urgent": bool(is_urgent),
                 "confidence": max(0.0, min(1.0, confidence)),
                 "model_version": MODEL_VERSION,
-                "needs_human_review": confidence < 0.5,
+                "needs_human_review": confidence < 0.5 or len(ticket["text"].split()) <= 3,
             }
             if "ticket_id" in ticket:
                 prediction["ticket_id"] = ticket["ticket_id"]

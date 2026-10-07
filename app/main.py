@@ -313,7 +313,9 @@ async def dashboard_models():
         "training_examples": metrics["training_examples"],
         "validation_examples": metrics["validation_examples"],
         "models": [
-            {"id": name, "loaded": True, "algorithm": "TF-IDF + logistic regression",
+            {"id": name, "loaded": True, "algorithm": "TF-IDF + calibrated linear SVM"
+             if current.training_metadata.get("selected_configurations", {}).get(name, {}).get("estimator") == "calibrated_svm"
+             else "TF-IDF + logistic regression",
              "classes": [str(value) for value in pipeline.named_steps["classifier"].classes_],
              "validation": metrics["validation"][name]}
             for name, pipeline in (("category", current.category_model),

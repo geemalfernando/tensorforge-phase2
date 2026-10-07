@@ -69,7 +69,9 @@ export default function TicketPanel({ record, routes, onReview }) {
       </div>
       {p.needs_human_review && (
         <p className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-900">
-          Human review recommended: the primary confidence is below 50%.
+          {ticket.text.trim().split(/\s+/).length <= 3
+            ? "Human review recommended: this message has very little context. Add what happened and whether it concerns a ride, food order, account, or payment."
+            : "Human review recommended: the primary confidence is below 50%."}
         </p>
       )}
       <form

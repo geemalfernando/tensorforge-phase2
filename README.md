@@ -1,6 +1,6 @@
 # ResolveX × TensorForge — Support Intelligence
 
-A multilingual RideEat support-ticket classifier, API, and React dashboard adapted from your ResolveX system. Ticket intake, live operations, support review, batch inference, and a model lab share the same trained backend. The classifier is a locally trained TF-IDF + logistic-regression model; predictions do not call an LLM or any external service.
+A multilingual RideEat support-ticket classifier, API, and React dashboard adapted from your ResolveX system. Ticket intake, live operations, support review, batch inference, and a model lab share the same trained backend. The classifier is a locally trained TF-IDF models (logistic regression and a calibrated linear SVM); predictions do not call an LLM or any external service.
 
 ## Start the API and dashboard
 
@@ -75,21 +75,26 @@ The API validates the full batch before returning any predictions, preserves inp
 
 ## Model and evaluation
 
-Training uses only `channel`, `subject`, and `text`, not ticket IDs or the supplied language label. The primary-category feature pipeline combines word 1–2 grams with boundary-aware character 2–6 grams and balanced class weights to handle English, Sinhala/Tamil scripts, transliteration, typos, and mixed-script text. Separate classifiers predict primary category, secondary category (including a no-secondary class), and urgency. Validation-tuned probability cutoffs improve urgent-issue and secondary-issue recall, and narrow deterministic precedence rules enforce the documented safety, late-delivery/refund, and missing-item/refund policies. Team routing is derived from the fixed API category map.
+Training uses `channel`, `subject`, and `text`; ticket IDs and supplied language labels are excluded. The Drive archive was downloaded and verified against the local files: it contains the same 4,000 synthetic training tickets and 800 development validation tickets. Checksums and source details are recorded in `datasets/source_manifest.json`.
+
+All three classifiers were freshly fitted from these labeled tickets. The active artifact is `tf-phase2-drive-2.0.0`: primary category uses balanced logistic regression (`C=100`, word 1–2 and boundary-aware character 2–6 grams); secondary category uses a three-fold sigmoid-calibrated linear SVM (`C=1`); urgency uses balanced logistic regression (`C=40`). Secondary and urgency cutoffs are 0.2 and 0.3. Secondary/urgency text cleanup normalizes whitespace and removes explicitly quoted historical correspondence and synthetic reference IDs. Fixed routing and narrow precedence rules enforce the competition policy.
 
 ```bash
 python scripts/train_model.py
+python scripts/evaluate_model.py
+# Optional reproduction of primary-model development comparisons:
+python scripts/compare_training.py --target category
 ```
 
-The script trains on `datasets/train.csv`, evaluates `datasets/validation.csv`, writes `artifacts/model.joblib`, and records accuracy and macro-F1 in `artifacts/evaluation_metrics.json`. Model `tf-phase2-baseline-1.2.1` scores validation category accuracy **0.6288** (macro-F1 **0.6495**), secondary-category accuracy **0.9550** (macro-F1 **0.6922**), and urgency accuracy **0.9750** (macro-F1 **0.9264**). This validation split informed model and threshold selection, so these are development scores rather than independent test scores. Review the full metrics before deployment; the supplied multilingual dataset is synthetic, and the dataset notes caution that its Sinhala/Tamil content has not had independent native-speaker review.
+`configs/training.json` freezes the selected configuration. Training replaces the saved artifact only after all three fits and validation finish; it does not reuse previous weights. Full experiment results, including rejected candidates, are saved in `artifacts/training_experiments.json`. Candidates were compared on an internal training split and the supplied development validation set. These are not independent test scores.
 
-Run `python scripts/evaluate_model.py` to reproduce scores for the saved model and write per-category, per-language, and confusion breakdowns to `artifacts/evaluation_breakdown.json`.
+Current validation accuracy / macro-F1: category **63.00% / 65.04%**, secondary **95.50% / 69.22%**, urgency **97.50% / 93.13%**. Primary accuracy remains a material limitation; retraining on identical synthetic data cannot establish real-world reliability. The independent evaluation is the judges' unseen holdout. `scripts/evaluate_model.py` also validates all 800 predictions against the organizer's exact JSON Schema bundle and writes per-category/per-language breakdowns.
 
-Predictions with primary confidence below 0.5 set `needs_human_review` to `true`. Confidence is the model probability for the returned primary category; it has not been independently calibrated.
+Primary confidence below 0.5 or a message with three or fewer words recommends human review. For example, `badu nati una` predicts `lost_item` at about 31.6% confidence and requests review. It does not specify whether personal belongings or food-order contents are missing. Review decisions never alter the raw API prediction. Primary confidence has not been independently calibrated.
 
 ## Phase 2 submission
 
-Track verified requirements and missing evidence in [the submission checklist](docs/submission-checklist.md). A [report draft](docs/report.md) and [15-minute video outline](docs/video-walkthrough.md) are available. Contract tests validate responses against the supplied OpenAPI’s embedded schemas and check its prose consistency rules. OpenAPI 3.0 `nullable` is translated for the JSON Schema validator. The separate organizer `schemas/` bundle has not been provided, so validation against that bundle remains pending. Public hosting and video recording are separate deliverables.
+Track verified requirements and missing evidence in [the submission checklist](docs/submission-checklist.md). A [report draft](docs/report.md) and [15-minute video outline](docs/video-walkthrough.md) are available. Contract tests validate responses against the supplied OpenAPI’s embedded schemas and check its prose consistency rules. OpenAPI 3.0 `nullable` is translated for the JSON Schema validator. The exact organizer draft-2020-12 schemas downloaded from Drive are in `schemas/`; contract tests also validate responses against that bundle. Public hosting and video recording are separate deliverables.
 
 ## Tests
 
@@ -106,7 +111,7 @@ BASE_URL=http://127.0.0.1:8000 node scripts/verify_dashboard.cjs
 
 This checks intake, review, urgent routing, single/synchronous/2,001-ticket async inference, ordered download, three-model status, and mobile layout.
 
-The 31 tests include validation against the supplied OpenAPI's embedded schemas and consistency rules. Reproduce container checks with:
+The 33 tests include validation against the supplied OpenAPI's embedded schemas and consistency rules. Reproduce container checks with:
 
 ```bash
 docker build -t tensorforge-mvp .
