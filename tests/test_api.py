@@ -19,6 +19,17 @@ def test_health_is_public_and_dashboard_assets_load(client):
     assert client.get("/static/styles.css").status_code == 200
 
 
+def test_dashboard_reports_three_real_models_without_secrets(client):
+    result = client.get("/dashboard/models")
+    assert result.status_code == 200
+    value = result.json()
+    assert [item["id"] for item in value["models"]] == ["category", "secondary_category", "is_urgent"]
+    assert all(item["loaded"] for item in value["models"])
+    assert value["training_examples"] == 4000
+    assert len(value["routes"]) == 11
+    assert "test-evaluation-key" not in result.text
+
+
 def test_auth_happens_before_content_type_and_json_validation(client):
     unauthorized = client.post("/predict", content="{", headers={"Content-Type": "text/plain"})
     assert unauthorized.status_code == 401

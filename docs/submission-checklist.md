@@ -4,12 +4,12 @@ Complete means verified with recorded evidence; a file or implementation alone i
 
 | Requirement | Current evidence | Remaining action |
 | --- | --- | --- |
-| End-to-end front end | Dashboard with single and batch workflows and automatic server-side key access; desktop/mobile checks passed | Publish and verify a live demo URL |
-| Official OpenAPI contract | Supplied v2.1.0 saved as `tensorforge-phase2-openapi-v2.yaml`; 30 API/contract tests pass; matching contract served by `/docs` | Repeat contract checks against the deployed service |
+| End-to-end front end | ResolveX-derived React dashboard: intake, operations, support review, batch workbench, model lab; automatic server-side key access | Publish and verify a live demo URL |
+| Official OpenAPI contract | Supplied v2.1.0 saved as `tensorforge-phase2-openapi-v2.yaml`; 31 API/contract tests pass; matching contract served by `/docs` | Repeat contract checks against the deployed service |
 | Official JSON Schemas | Tests validate embedded OpenAPI schemas (nullable adapted) and prose team/secondary/spam consistency rules | Obtain separate organizer `schemas/` and draft-2020-12 bundle; validate against that exact bundle |
 | API key privacy and reliability | `.env` ignored/excluded from image; configured key tested; 64 concurrent rounds of valid/invalid auth and health passed locally; public health | Configure the exact key on hosting; keep it unchanged for the evaluation window; repeat concurrent checks publicly |
 | Large evaluation batch | Local 5,000-ticket ordered results passed while health/live predictions stayed responsive; container also passed 2,001 tickets offline | Record 2,001–5,000-ticket public-host evidence and reference-hardware checks |
-| Offline container startup | Built `tensorforge-phase2:contract-2.1`; published-port health ready in 1.467 s; 100-ticket sync and 2,001-ticket async passed with network disabled; evidence in `artifacts/container_verification.json` | Repeat on reference hardware; GitHub CI previously returned startup_failure before jobs started |
+| Offline container startup | Built `tensorforge-phase2:resolvex`; published-port health ready in 1.403 s; 100-ticket sync and 2,001-ticket async passed with network disabled; evidence in `artifacts/resolvex_container_verification.json` | Repeat on reference hardware; GitHub CI previously returned startup_failure before jobs started |
 | Hosted batch endpoint | Local API available | Provision hosting with persistent `/app/data`; one API process per SQLite store; test public authenticated endpoint |
 | GitHub repository | Private repository published at the URL below; main branch verified | Give judges repository access |
 | Video | `docs/video-walkthrough.md` contains a timed recording plan | Record 15 minutes; upload YouTube unlisted; verify viewing access |

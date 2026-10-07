@@ -1,0 +1,9 @@
+{
+  "image": "tensorforge-phase2:resolvex",
+  "image_id": "sha256:1dd2026d1a70b744121fc9132d2b73527fb43be7af9ba1ad7973182e48042554",
+  "published_port_ready_seconds": 1.403,
+  "model_version": "tf-phase2-baseline-1.2.1",
+  "sync_batch_size": 100,
+  "async_job_size": 2001,
+  "offline_runtime_passed": true
+}

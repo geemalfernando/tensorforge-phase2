@@ -298,7 +298,30 @@ def _job_manager() -> Optional[JobManager]:
 
 @app.get("/", include_in_schema=False)
 async def dashboard():
-    return FileResponse(str(Path(__file__).parent / "static" / "index.html"))
+    return FileResponse(str(Path(__file__).parent / "static" / "ui" / "index.html"))
+
+
+@app.get("/dashboard/models", include_in_schema=False)
+async def dashboard_models():
+    current = _prediction_model()
+    if current is None:
+        return error_response(503, "model_not_ready", "The model is not loaded yet.")
+    metrics = json.loads((MODEL_PATH.parent / "evaluation_metrics.json").read_text(encoding="utf-8"))
+    from app.model import TEAM_BY_CATEGORY
+    return {
+        "model_version": MODEL_VERSION,
+        "training_examples": metrics["training_examples"],
+        "validation_examples": metrics["validation_examples"],
+        "models": [
+            {"id": name, "loaded": True, "algorithm": "TF-IDF + logistic regression",
+             "classes": [str(value) for value in pipeline.named_steps["classifier"].classes_],
+             "validation": metrics["validation"][name]}
+            for name, pipeline in (("category", current.category_model),
+                                   ("secondary_category", current.secondary_model),
+                                   ("is_urgent", current.urgent_model))
+        ],
+        "routes": TEAM_BY_CATEGORY,
+    }
 
 
 @app.get("/dashboard/status", include_in_schema=False)

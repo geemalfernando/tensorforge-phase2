@@ -1,0 +1,12 @@
+{
+  "single": true,
+  "review": true,
+  "urgent_queue": true,
+  "sync_batch": 4,
+  "async_batch": 2001,
+  "download_ordered": true,
+  "three_model_lab": true,
+  "mobile_overflow": false,
+  "browser_errors": [],
+  "unauthorized_status": 401
+}

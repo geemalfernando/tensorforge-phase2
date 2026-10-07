@@ -6,9 +6,9 @@ This is a recording outline, not a completed video. Keep `.env`, terminal enviro
 | --- | --- |
 | 00:00–01:00 | Introduce the RideEat classification/routing task. State that predictions use a locally trained model. Show the live URL once deployed. |
 | 01:00–03:00 | Demonstrate chat, email subject/body, a Sinhala/Tamil or transliterated message, category/team, secondary issue, urgency, and human-review indicator. Explain these are predictions requiring judgment. |
-| 03:00–05:00 | Load a JSON batch. Show synchronous results, urgent/review filters, and JSON download. Submit an evaluation-sized async batch above 2,000 tickets; show polling, completion, and paging. |
+| 03:00–05:00 | Load a JSON batch. Show synchronous results and JSON download; switch to Live operations and Support queue to confirm a routing decision. Submit an evaluation-sized async batch above 2,000 tickets; show polling, completion, and paging. |
 | 05:00–06:30 | Show API protection without showing the key: public health, unauthorized prediction, and successful authenticated request with headers redacted. Show malformed JSON and structured validation errors. |
-| 06:30–08:00 | Explain browser → FastAPI → local pipelines and async worker → SQLite. Explain queue limits, cancellation, restart handling, and retained results. |
+| 06:30–08:00 | Show Model lab and its three loaded classifiers. Explain browser → FastAPI → local pipelines and async worker → SQLite. Explain queue limits, cancellation, restart handling, and retained results. |
 | 08:00–10:30 | Show training code, word/character features, excluded ticket IDs/language labels, three classifiers, thresholds, and precedence rules. Show the training command and generated artifacts. Only claim improvements supported by saved experiments. |
 | 10:30–12:30 | Present validation accuracy and macro-F1, per-language/category breakdowns, and common confusions. Explain validation informed tuning and judges' holdout is independent. Explain synthetic-data/native-speaker-review limitations. |
 | 12:30–14:00 | Show test results and official-schema validation once available. Demonstrate the single Docker run command, runtime without network, public endpoint, and repository setup. Label any incomplete check accurately. |

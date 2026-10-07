@@ -1,6 +1,6 @@
-# TensorForge 2.0 — Support Intelligence MVP
+# ResolveX × TensorForge — Support Intelligence
 
-A multilingual RideEat support-ticket classifier, API, and browser dashboard. The classifier is a locally trained TF-IDF + logistic-regression model; predictions do not call an LLM or any external service.
+A multilingual RideEat support-ticket classifier, API, and React dashboard adapted from your ResolveX system. Ticket intake, live operations, support review, batch inference, and a model lab share the same trained backend. The classifier is a locally trained TF-IDF + logistic-regression model; predictions do not call an LLM or any external service.
 
 ## Start the API and dashboard
 
@@ -12,6 +12,8 @@ source .venv/bin/activate
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
 python scripts/train_model.py
+npm ci --prefix frontend
+npm run build --prefix frontend
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
@@ -47,9 +49,13 @@ docker run -p 8000:8000 -e API_KEY='<your-team-key>' tensorforge-mvp
 
 ### Dashboard workflows
 
-The single-ticket tab supports chat, email subject/body, and call transcripts. Use the batch workbench to load or paste a JSON request: up to 100 tickets run synchronously, while 101–5,000 use the async job API with progress polling, cancellation, and JSON download. The browser calls `/dashboard/api/...`; the server supplies its configured key internally. There is no API-key prompt. This is a public demo interface; direct prediction/job API routes still require the exact evaluation key. The bridge checks same-origin browser requests and never returns the key.
+The ResolveX-style workspace has five views: Ticket intake, Live operations, Support queue, Batch workbench, and Model lab. Intake supports chat, email subject/body, and call transcripts. Predictions enter the current browser session queue. Urgent and low-confidence tickets enter support review; an agent can confirm the team or record a routing override with a reason. Review decisions are session demo state, reset on refresh, and leave canonical model predictions unchanged.
 
-The dashboard checks whether server access is configured and shows service readiness automatically. Session counters track classified, urgent, and review-recommended tickets in the current tab. Batch results include a preview of up to 100 rows with urgent and human-review filters; JSON download includes the full batch. Counters reset on reload or with Reset counters. Ctrl/Cmd+Enter submits the selected workbench.
+The batch workbench loads JSON, processes 1–100 tickets synchronously or 101–5,000 asynchronously, polls progress, supports cancellation, and downloads all results. Its preview shows up to 100 rows. The model lab reads actual loaded classifier classes and saved validation metrics from the server.
+
+The browser calls `/dashboard/api/...`; the server supplies its configured key internally. There is no API-key prompt or browser secret. Direct judging routes require the exact evaluation key. See [ResolveX adaptation details](docs/resolvex-adaptation.md) for source provenance and the three-model replacement.
+
+For frontend development, run `npm run dev --prefix frontend` alongside the API, and open the URL printed by Vite. Rebuild with `npm run build --prefix frontend` to update the UI served by FastAPI. Node is needed only to build the UI; Docker handles this in its build stage.
 
 Request examples:
 
@@ -91,7 +97,16 @@ Track verified requirements and missing evidence in [the submission checklist](d
 pytest -q
 ```
 
-The 30 tests include validation against the supplied OpenAPI's embedded schemas and consistency rules. Reproduce container checks with:
+Browser workflow verification (against a running local service):
+
+```bash
+npx --prefix frontend playwright install chromium
+BASE_URL=http://127.0.0.1:8000 node scripts/verify_dashboard.cjs
+```
+
+This checks intake, review, urgent routing, single/synchronous/2,001-ticket async inference, ordered download, three-model status, and mobile layout.
+
+The 31 tests include validation against the supplied OpenAPI's embedded schemas and consistency rules. Reproduce container checks with:
 
 ```bash
 docker build -t tensorforge-mvp .

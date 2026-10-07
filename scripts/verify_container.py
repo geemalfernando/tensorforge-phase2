@@ -11,7 +11,7 @@ from urllib.request import urlopen
 from dotenv import load_dotenv
 
 RUNTIME_CHECK = r'''
-import json, os, time
+import json, os, re, time
 from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
@@ -47,6 +47,13 @@ else:
     raise AssertionError('Container inference is open without a key')
 single = request('/predict', ticket)
 assert single['model_version'] == health['model_version']
+with urlopen(base + '/') as response:
+    html = response.read().decode()
+assert 'TensorForge' in html
+for asset in re.findall(r'(?:src|href)="(/static/ui/[^" ]+)"', html):
+    with urlopen(base + asset) as response:
+        assert response.status == 200
+assert len(request('/dashboard/models')['models']) == 3
 batch = request('/predict/batch', {'tickets': [dict(ticket, ticket_id=str(i)) for i in range(100)]})
 assert batch['meta']['count'] == 100
 assert [p['ticket_id'] for p in batch['predictions']] == [str(i) for i in range(100)]
