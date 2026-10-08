@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { api, label, download } from "./lib/api";
+import { api, label, download, sessionRequest } from "./lib/api";
 import TicketPanel from "./components/TicketPanel";
+import Landing from "./components/Landing";
 
 const NAV = [
+  ["home", "⌂", "Home"],
   ["intake", "＋", "Ticket intake"],
   ["ops", "◈", "Live operations"],
   ["support", "◇", "Support queue"],
@@ -27,7 +29,7 @@ const sampleBatch = {
 };
 
 export default function App() {
-  const [page, setPage] = useState("intake"),
+  const [page, setPage] = useState("home"),
     [health, setHealth] = useState(null),
     [access, setAccess] = useState(false),
     [models, setModels] = useState(null);
@@ -48,6 +50,13 @@ export default function App() {
     [notice, setNotice] = useState("");
   const activeJob = useRef(null),
     mounted = useRef(true);
+  const [role, setRole] = useState("customer"), [password, setPassword] = useState("");
+  async function refreshTickets() {
+    try {
+      const result = await api("/tickets");
+      if (mounted.current) {setRecords(result.records);setRole(result.role);}
+    } catch (error) {if (mounted.current) setError(error.message);}
+  }
   useEffect(() => {
     mounted.current = true;
     const load = async () => {
@@ -70,10 +79,13 @@ export default function App() {
       }
     };
     load();
+    refreshTickets();
     const timer = setInterval(load, 15000);
+    const ticketsTimer = setInterval(refreshTickets, 10000);
     return () => {
       mounted.current = false;
       clearInterval(timer);
+      clearInterval(ticketsTimer);
     };
   }, []);
   const selected = records.find((r) => r.id === selectedId) || records[0];
@@ -81,7 +93,7 @@ export default function App() {
     total: records.length,
     urgent: records.filter((r) => r.prediction.is_urgent).length,
     review: records.filter((r) => r.state === "review").length,
-    resolved: records.filter((r) => r.state === "resolved").length,
+    resolved: records.filter((r) => r.state === "accepted").length,
   };
   const rows = useMemo(
     () =>
@@ -94,29 +106,11 @@ export default function App() {
               ? r.prediction.is_urgent
               : filter === "review"
                 ? r.state === "review"
-                : r.state === "resolved"),
+                : r.state === "accepted"),
         ),
     [records, page, filter],
   );
   const update = (key, value) => setForm((f) => ({ ...f, [key]: value }));
-  function addRecords(tickets, predictions) {
-    const now = new Date().toISOString();
-    const next = predictions.map((prediction, i) => ({
-      id: crypto.randomUUID(),
-      ticket: tickets[i],
-      prediction,
-      state:
-        prediction.needs_human_review || prediction.is_urgent
-          ? "review"
-          : "routed",
-      at: now,
-      notes: "",
-      finalTeam: prediction.team,
-    }));
-    setRecords((old) => [...next, ...old]);
-    setSelectedId(next[0]?.id);
-    return next;
-  }
   async function classify(event) {
     event.preventDefault();
     setBusy(true);
@@ -128,9 +122,10 @@ export default function App() {
         ...(form.ticket_id ? { ticket_id: form.ticket_id } : {}),
         ...(form.channel === "email" ? { subject: form.subject } : {}),
       };
-      const prediction = await api("/predict", ticket);
-      addRecords([ticket], [prediction]);
-      setNotice("Ticket classified and added to your session queue.");
+      const result = await api("/tickets", ticket);
+      await refreshTickets();
+      setSelectedId(result.records[0].id);
+      setNotice(result.records[0].state === "review" ? "Ticket submitted. Support approval is required." : "Ticket classified and routed.");
     } catch (e) {
       setError(e.message);
     } finally {
@@ -174,7 +169,9 @@ export default function App() {
       }
       if (result) {
         setBatchResults(result);
-        addRecords(payload.tickets, result.predictions);
+        const saved = await api("/tickets/import", payload);
+        await refreshTickets();
+        setSelectedId(saved.records[0]?.id);
         setNotice(
           `${result.predictions.length} tickets classified. Results are available below.`,
         );
@@ -197,13 +194,21 @@ export default function App() {
       setError(e.message);
     }
   }
-  function review(id, team, notes) {
-    setRecords((old) =>
-      old.map((r) =>
-        r.id === id ? { ...r, state: "resolved", finalTeam: team, notes } : r,
-      ),
-    );
-    setNotice("Review saved for this session.");
+  async function review(id, team, notes) {
+    try {
+      const record = await api(`/tickets/${id}/accept`, {team, notes});
+      setRecords(old=>old.map(r=>r.id===id?record:r));
+      setNotice("Ticket accepted by support. The decision has been saved.");
+    } catch (error) {setError(error.message);}
+  }
+  async function signIn(event) {
+    event.preventDefault();setBusy(true);setError("");
+    try {await sessionRequest("/dashboard/support/login", {password});setPassword("");await refreshTickets();}
+    catch(error) {setError(error.message);}
+    finally {setBusy(false);}
+  }
+  async function signOut() {
+    await sessionRequest("/dashboard/support/logout", {});await refreshTickets();navigate("intake");
   }
   function navigate(next) {
     setPage(next);
@@ -220,17 +225,17 @@ export default function App() {
             href="#"
             onClick={(e) => {
               e.preventDefault();
-              navigate("intake");
+              navigate("home");
             }}
             className="flex items-center gap-2"
           >
             <span className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-950 font-black text-white">
-              X
+              f
             </span>
             <span className="font-black tracking-tight">
-              ResolveX
+              Fresh Desk
               <span className="block text-[10px] font-semibold uppercase tracking-widest text-teal-700">
-                TensorForge edition
+                Support intelligence
               </span>
             </span>
           </a>
@@ -249,6 +254,8 @@ export default function App() {
               </button>
             ))}
           </nav>
+          <span className="status-pill">{role === "support" ? "Support role" : "Customer role"}</span>
+          {role === "support" && <button className="text-xs font-semibold" onClick={signOut}>Sign out</button>}
           <span
             role="status"
             className={`ml-auto rounded-full px-3 py-1 text-xs font-bold ${access && health?.model_loaded ? "bg-teal-50 text-teal-800" : "bg-amber-50 text-amber-800"}`}
@@ -268,6 +275,7 @@ export default function App() {
         </div>
       </header>
       <main className="page-shell space-y-6 animate-fade-up">
+        {page === "home" ? <Landing onStart={()=>navigate("intake")} onModels={()=>navigate("models")} onSupport={()=>navigate("support")}/> : <>
         <section className="hero-panel overflow-hidden rounded-3xl bg-slate-950 p-6 text-white sm:p-8">
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div>
@@ -285,7 +293,7 @@ export default function App() {
                   : page === "ops"
                     ? "Follow ticket routing and review work across your current session."
                     : page === "support"
-                      ? "Review urgent or uncertain predictions and confirm the support team."
+                      ? "Review urgent or uncertain predictions and accept tickets and confirm the support team."
                       : page === "batch"
                         ? "Run a few tickets or an entire evaluation job. Track progress and export every prediction."
                         : "Inspect the three trained models, development scores, and the fixed support routes."}
@@ -309,7 +317,7 @@ export default function App() {
           aria-label="Session activity"
         >
           {[
-            ["Classified", stats.total, "tickets in this session"],
+            ["Classified", stats.total, "saved tickets"],
             ["Urgent", stats.urgent, "priority attention"],
             ["Needs review", stats.review, "waiting for a decision"],
             ["Reviewed", stats.resolved, "team confirmed"],
@@ -337,7 +345,17 @@ export default function App() {
             {notice}
           </p>
         )}
-        {page === "intake" && (
+        {page === "support" && role !== "support" && (
+        <section className="panel mx-auto max-w-lg p-6">
+          <p className="kicker">Support role</p><h2 className="mt-2 text-xl font-bold">Sign in to review tickets</h2>
+          <p className="mt-3 text-sm text-slate-500">Support staff can inspect the shared review queue and accept or adjust a ticket's routing.</p>
+          <form onSubmit={signIn} className="mt-5 space-y-4">
+            <label className="block text-xs font-semibold">Support password<input className="field" type="password" autoComplete="current-password" required value={password} onChange={event=>setPassword(event.target.value)}/></label>
+            <button className="btn" disabled={busy}>{busy ? "Signing in…" : "Sign in as support"}</button>
+          </form>
+        </section>
+      )}
+      {page === "intake" && (
           <div className="grid gap-5 lg:grid-cols-2">
             <section className="panel p-5 sm:p-6">
               <p className="kicker">Customer message</p>
@@ -429,6 +447,9 @@ export default function App() {
                   key={selected.id}
                   record={selected}
                   routes={models?.routes || {}}
+                  models={models}
+                  role={role}
+                  onOpenSupport={()=>navigate("support")}
                   onReview={review}
                 />
               ) : (
@@ -451,7 +472,7 @@ export default function App() {
             </section>
           </div>
         )}
-        {(page === "ops" || page === "support") && (
+        {(page === "ops" || (page === "support" && role === "support")) && (
           <>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap gap-2">
@@ -535,6 +556,9 @@ export default function App() {
                     key={selected.id}
                     record={selected}
                     routes={models?.routes || {}}
+                  models={models}
+                  role={role}
+                  onOpenSupport={()=>navigate("support")}
                     onReview={review}
                   />
                 ) : rows[0] ? (
@@ -542,6 +566,9 @@ export default function App() {
                     key={rows[0].id}
                     record={rows[0]}
                     routes={models?.routes || {}}
+                  models={models}
+                  role={role}
+                  onOpenSupport={()=>navigate("support")}
                     onReview={review}
                   />
                 ) : (
@@ -756,10 +783,11 @@ export default function App() {
             </section>
           </>
         )}
+        </>}
         <footer className="flex flex-wrap justify-between gap-3 border-t py-4 text-xs text-slate-400">
-          <span>ResolveX × TensorForge · Phase 2</span>
+          <span>Fresh Desk · TensorForge Phase 2</span>
           <span>
-            Session tickets and review decisions reset on refresh. Async jobs
+            Tickets and support decisions are saved. Async jobs
             retained for 24 hours.
           </span>
         </footer>

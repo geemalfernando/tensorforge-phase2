@@ -39,6 +39,11 @@ def main():
             **evaluate([categories[i] for i in indices], [predicted_categories[i] for i in indices]),
         }
     confusions = Counter((actual, predicted) for actual, predicted in zip(categories, predicted_categories) if actual != predicted)
+    targets = {
+        "category": (categories, predicted_categories),
+        "secondary_category": (secondary, [p["secondary_category"] or "__none__" for p in predictions]),
+        "is_urgent": (urgent, [str(p["is_urgent"]).lower() for p in predictions]),
+    }
     report = {
         "model_version": MODEL_VERSION,
         "dataset": args.dataset.name,
@@ -51,6 +56,11 @@ def main():
             "is_urgent": evaluate(urgent, [str(p["is_urgent"]).lower() for p in predictions]),
         },
         "category_report": classification_report(categories, predicted_categories, labels=labels, output_dict=True, zero_division=0),
+        "classification_reports": {name: classification_report(actual, predicted, output_dict=True, zero_division=0)
+                                   for name, (actual, predicted) in targets.items()},
+        "confusion_matrices": {name: {"labels": sorted(set(actual) | set(predicted)),
+                                     "rows_actual_columns_predicted": confusion_matrix(actual, predicted, labels=sorted(set(actual) | set(predicted))).tolist()}
+                               for name, (actual, predicted) in targets.items()},
         "category_confusion_matrix": {"labels": labels, "rows_actual_columns_predicted": confusion_matrix(categories, predicted_categories, labels=labels).tolist()},
         "category_by_language": groups,
         "top_category_confusions": [{"actual": a, "predicted": p, "count": n} for (a, p), n in confusions.most_common(10)],

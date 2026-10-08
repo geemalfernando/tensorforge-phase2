@@ -113,6 +113,12 @@ class TicketModel:
         return cls(joblib.load(path))
 
     def predict_many(self, tickets: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        return self._infer_many(tickets)
+
+    def analyze_many(self, tickets: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        return self._infer_many(tickets, include_details=True)
+
+    def _infer_many(self, tickets: List[Dict[str, Any]], include_details: bool = False) -> List[Dict[str, Any]]:
         if not tickets:
             return []
         texts = [compose_text(ticket) for ticket in tickets]
@@ -145,6 +151,8 @@ class TicketModel:
             ):
                 secondary = str(secondary_labels[secondary_index])
 
+            raw_category, raw_secondary = category, secondary
+
             category, secondary = self._apply_precedence(
                 normalize_ticket_text(compose_text(ticket)), category, secondary
             )
@@ -168,7 +176,31 @@ class TicketModel:
             }
             if "ticket_id" in ticket:
                 prediction["ticket_id"] = ticket["ticket_id"]
-            predictions.append(prediction)
+            if include_details:
+                def ranked(labels, values):
+                    return sorted([{"label": str(name), "probability": float(value)}
+                                   for name, value in zip(labels, values)],
+                                  key=lambda item: item["probability"], reverse=True)
+                reasons = []
+                if confidence < 0.5:
+                    reasons.append("Primary confidence below 50%")
+                if len(ticket["text"].split()) <= 3:
+                    reasons.append("Message has three or fewer words")
+                if is_urgent:
+                    reasons.append("Urgent ticket requires support attention")
+                predictions.append({"prediction": prediction, "analysis": {
+                    "primary_candidates": ranked(category_labels, category_probabilities[index]),
+                    "secondary_candidates": ranked(secondary_labels, secondary_probabilities[index]),
+                    "urgent_probability": float(urgent_probabilities[index][urgent_true_index]),
+                    "urgent_threshold": self.urgent_threshold,
+                    "secondary_threshold": self.secondary_threshold,
+                    "raw_category": raw_category,
+                    "rule_adjusted": category != raw_category or secondary != raw_secondary,
+                    "review_reasons": reasons,
+                    "model_version": MODEL_VERSION,
+                }})
+            else:
+                predictions.append(prediction)
         return predictions
 
     @staticmethod

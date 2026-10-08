@@ -1,10 +1,12 @@
 // Adapted from ResolveX's CasePanel: decision header, evidence blocks and support review.
 import { useState } from "react";
 import { label, download } from "../lib/api";
-export default function TicketPanel({ record, routes, onReview }) {
+export default function TicketPanel({ record, routes, onReview, role, models, onOpenSupport }) {
   const { ticket, prediction: p } = record;
   const [team, setTeam] = useState(record.finalTeam),
     [notes, setNotes] = useState(record.notes);
+  const [accepting,setAccepting] = useState(false);
+  const analysis = record.analysis;
   return (
     <section className="space-y-5" data-testid="ticket-panel">
       <div className="overflow-hidden rounded-2xl bg-slate-900 p-5 text-white">
@@ -74,16 +76,29 @@ export default function TicketPanel({ record, routes, onReview }) {
             : "Human review recommended: the primary confidence is below 50%."}
         </p>
       )}
-      <form
+      {analysis && <section className="rounded-2xl border border-slate-200 p-4" data-testid="model-details">
+        <p className="kicker">How the models scored this ticket</p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          {(models?.models || []).map(model=><div key={model.id}><h3 className="text-sm font-bold">{label(model.id)}</h3><p className="mt-1 text-xs text-slate-500">{model.algorithm}</p><p className="mt-2 text-xs text-slate-500">Validation accuracy {(model.validation.accuracy*100).toFixed(1)}% · macro-F1 {(model.validation.macro_f1*100).toFixed(1)}%</p></div>)}
+        </div>
+        <div className="mt-5 grid gap-5 sm:grid-cols-2">
+          <div><h3 className="text-sm font-semibold">Primary category candidates</h3>{analysis.primary_candidates.slice(0,3).map(candidate=><div className="mt-3" key={candidate.label}><div className="flex justify-between gap-2 text-xs"><span>{label(candidate.label)}</span><strong>{(candidate.probability*100).toFixed(1)}%</strong></div><div className="mt-1 h-1.5 rounded bg-slate-100"><div className="h-full rounded bg-teal-500" style={{width:`${candidate.probability*100}%`}}/></div></div>)}</div>
+          <div><h3 className="text-sm font-semibold">Secondary and urgency signals</h3><p className="mt-3 text-xs text-slate-500">Secondary cutoff: {(analysis.secondary_threshold*100).toFixed(0)}%</p>{analysis.secondary_candidates.slice(0,3).map(candidate=><p className="mt-2 flex justify-between gap-2 text-xs" key={candidate.label}><span>{candidate.label==='__none__'?'No secondary issue':label(candidate.label)}</span><strong>{(candidate.probability*100).toFixed(1)}%</strong></p>)}<p className="mt-4 text-xs">Urgency probability <strong>{(analysis.urgent_probability*100).toFixed(1)}%</strong> · cutoff {(analysis.urgent_threshold*100).toFixed(0)}%</p></div>
+        </div>
+        <p className="mt-4 text-xs text-slate-500">{analysis.rule_adjusted?`Routing rules adjusted the raw prediction (${label(analysis.raw_category)}).`:'No category precedence adjustment was applied.'} Model probabilities describe predictions; they do not guarantee correctness.</p>
+        {!!analysis.review_reasons.length&&<p className="mt-3 text-xs text-amber-800">Review reasons: {analysis.review_reasons.join(' · ')}</p>}
+      </section>}
+      {role === 'support' && record.state !== 'accepted' ? <form
         className="rounded-2xl border border-slate-200 p-4"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          onReview(record.id, team, notes.trim());
+          setAccepting(true);
+          try {await onReview(record.id, team, notes.trim());} finally {setAccepting(false);}
         }}
       >
         <h3 className="font-semibold">Support decision</h3>
         <p className="mt-1 text-xs text-slate-500">
-          Confirm or change the support team for this session.
+          Review the model signals, then accept the ticket or explain a routing change.
         </p>
         <label className="mt-3 block text-xs font-semibold">
           Final team
@@ -112,10 +127,10 @@ export default function TicketPanel({ record, routes, onReview }) {
             }
           />
         </label>
-        <button className="btn mt-3" type="submit">
-          {record.state === "resolved" ? "Update review" : "Confirm routing"}
+        <button className="btn mt-3" type="submit" disabled={accepting}>
+          {accepting ? "Accepting…" : "Accept ticket"}
         </button>
-      </form>
+      </form> : record.state === 'accepted' ? <section className="rounded-2xl bg-teal-50 p-4 text-sm text-teal-900"><strong>Accepted by support</strong><p className="mt-2">{record.finalTeam} · {new Date(record.reviewedAt).toLocaleString()}</p>{record.notes&&<p className="mt-2">{record.notes}</p>}</section> : record.state === 'review' ? <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4"><h3 className="text-sm font-bold">Waiting for support approval</h3><p className="mt-2 text-xs text-amber-900">A support team member must review and accept this ticket.</p><button className="btn-secondary mt-3" onClick={onOpenSupport}>Open support sign-in</button></section> : <p className="text-xs text-slate-500">Routed automatically. Support can review this ticket if needed.</p>}
       <details className="rounded-2xl border p-4">
         <summary className="cursor-pointer text-sm font-semibold">
           Prediction JSON

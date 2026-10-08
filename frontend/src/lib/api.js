@@ -1,5 +1,11 @@
 export async function api(path, body, method) {
-  const response = await fetch("/dashboard/api" + path, {
+  return request("/dashboard/api" + path, body, method);
+}
+export async function sessionRequest(path, body) {
+  return request(path, body);
+}
+async function request(path, body, method) {
+  const response = await fetch(path, {
     method: method || (body ? "POST" : "GET"),
     headers: {
       "X-TensorForge-Dashboard": "1",

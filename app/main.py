@@ -16,6 +16,9 @@ from dotenv import load_dotenv
 
 from app.jobs import JobManager
 from app.model import MODEL_PATH, MODEL_VERSION, TicketModel
+from app.support import SupportStore
+from app.support_routes import register_support_routes
+import sys
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
@@ -28,18 +31,21 @@ BODY_LIMITS = {
 }
 model: Optional[TicketModel] = None
 jobs: Optional[JobManager] = None
+support: Optional[SupportStore] = None
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    global model, jobs
+    global model, jobs, support
     model = TicketModel.load(MODEL_PATH)
     jobs = JobManager(model)
+    support = SupportStore(jobs.db_path)
     yield
     if jobs is not None:
         jobs.close()
     jobs = None
     model = None
+    support = None
 
 
 app = FastAPI(
@@ -66,6 +72,13 @@ def contract_openapi():
 app.openapi = contract_openapi
 
 
+def dashboard_origin_allowed(request):
+    origin = request.headers.get("origin")
+    return (request.headers.get("X-TensorForge-Dashboard") == "1"
+            and request.headers.get("sec-fetch-site") != "cross-site"
+            and (origin is None or origin == "{}://{}".format(request.url.scheme, request.url.netloc)))
+
+
 @app.middleware("http")
 async def dashboard_api_access(request: Request, call_next):
     """Use the server's key for the public demo without exposing it to the browser."""
@@ -75,15 +88,15 @@ async def dashboard_api_access(request: Request, call_next):
         allowed = (
             (path in {"/predict", "/predict/batch", "/batch/jobs"} and request.method == "POST")
             or (path.startswith("/batch/jobs/") and request.method in {"GET", "DELETE"})
+            or (path in {"/tickets", "/tickets/import"} and request.method in {"GET", "POST"})
+            or (path.startswith("/tickets/") and path.endswith("/accept") and request.method == "POST")
         )
         if not allowed:
             return error_response(404, "not_found", "The requested resource was not found.")
         origin = request.headers.get("origin")
         expected_origin = "{}://{}".format(request.url.scheme, request.url.netloc)
         if (
-            request.headers.get("X-TensorForge-Dashboard") != "1"
-            or request.headers.get("sec-fetch-site") == "cross-site"
-            or (origin is not None and origin != expected_origin)
+            not dashboard_origin_allowed(request)
         ):
             return error_response(403, "forbidden", "Dashboard requests must come from this site.")
         key = os.environ.get("API_KEY")
@@ -507,3 +520,6 @@ async def get_batch_job_results(job_id: str, request: Request):
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     return Response(status_code=204)
+
+
+register_support_routes(app, sys.modules[__name__])
