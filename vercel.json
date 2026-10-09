@@ -12,7 +12,6 @@
       "root": ".",
       "framework": "fastapi",
       "entrypoint": "app.main:app",
-      "installCommand": "pip install -r requirements.txt",
       "functions": {
         "app/main.py": {
           "maxDuration": 300,
