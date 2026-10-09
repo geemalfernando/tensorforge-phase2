@@ -812,6 +812,21 @@ export default function App() {
           </span>
         </footer>
       </main>
+      <button
+        type="button"
+        onClick={() => {
+          navigate("demo");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+        aria-current={page === "demo" ? "page" : undefined}
+        aria-label="Open the judge demo and evaluation checklist"
+        className={`fixed bottom-5 left-5 z-50 inline-flex min-h-12 items-center gap-2 rounded-full border border-dashed px-4 py-2 text-sm font-semibold shadow-xl backdrop-blur transition hover:-translate-y-0.5 ${page === "demo" ? "border-[#71d4c8] bg-[#183133] text-white" : "border-[#526768] bg-[#10191b]/95 text-[#d2dfde] hover:border-[#71d4c8] hover:text-white"}`}
+      >
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="1.7">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 3h6m-5 0v5.2L5.6 18a2 2 0 0 0 1.8 3h9.2a2 2 0 0 0 1.8-3L14 8.2V3M8 15h8" />
+        </svg>
+        Demo
+      </button>
     </FreshSurface>
   );
 }

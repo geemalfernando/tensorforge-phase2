@@ -4,25 +4,25 @@ Complete means verified with recorded evidence; a file or implementation alone i
 
 | Requirement | Current evidence | Remaining action |
 | --- | --- | --- |
-| End-to-end front end | ResolveX-derived React dashboard: intake, operations, support review, batch workbench, model lab; automatic server-side key access | Publish and verify a live demo URL |
-| Official OpenAPI contract | Supplied v2.1.0 saved as `tensorforge-phase2-openapi-v2.yaml`; 33 API/contract tests pass; matching contract served by `/docs` | Repeat contract checks against the deployed service |
+| End-to-end front end | Live dashboard at `https://tensorforge-phase2.vercel.app/`; the floating Demo button opens the judge checklist and key-gated API console | Refresh the walkthrough to show the judge console |
+| Official OpenAPI contract | Supplied v2.1.0 saved as `tensorforge-phase2-openapi-v2.yaml`; 39 focused API/contract tests pass; matching contract served by `/docs` | Repeat full schema and async-job checks against the deployed service |
 | Official JSON Schemas | Exact organizer standalone schemas and draft-2020-12 bundle downloaded from Drive; contract responses and all 800 validation predictions checked against the bundle | Repeat on the public host |
-| API key privacy and reliability | `.env` ignored/excluded from image; configured key tested; 64 concurrent rounds of valid/invalid auth and health passed locally; public health | Configure the exact key on hosting; keep it unchanged for the evaluation window; repeat concurrent checks publicly |
+| API key privacy and reliability | `.env` ignored/excluded from image; exact key tested against hosted synchronous batch; judge console stores the entered key in page memory only; public health | Keep the exact key unchanged and active through the evaluation window; repeat concurrent checks publicly |
 | Large evaluation batch | Local 5,000-ticket ordered results passed while health/live predictions stayed responsive; container also passed 2,001 tickets offline | Record 2,001–5,000-ticket public-host evidence and reference-hardware checks |
 | Offline container startup | Built `tensorforge-phase2:drive-2.0`; published-port health ready in 1.414 s; 100-ticket sync and 2,001-ticket async passed with network disabled; evidence in `artifacts/drive_container_verification.json` | Repeat on reference hardware; GitHub CI previously returned startup_failure before jobs started |
-| Hosted batch endpoint | Local API available | Provision hosting with persistent `/app/data`; one API process per SQLite store; test public authenticated endpoint |
-| GitHub repository | Private repository published at the URL below; main branch verified | Give judges repository access |
-| Video | `docs/video-walkthrough.md` contains a timed recording plan | Record 15 minutes; upload YouTube unlisted; verify viewing access |
-| Report | `docs/report.md` and five-page `docs/report.pdf` draft with reproduced metrics | Update with completed evidence/URLs before final submission; re-export and recheck page limit |
-| Training/evaluation evidence | Fresh Drive-trained artifact v2.0.0, dataset checksums, frozen configuration, saved model comparisons and detailed development scores | Save any future model experiments with configs and results; keep judges' holdout unseen |
+| Hosted batch endpoint | Production `/predict/batch` passed public-health, missing-key `401`, and valid-key `200` checks; full route list is shown in the judge console | Repeat deployed schema validation and 2,001–5,000-ticket async-job evidence |
+| GitHub repository | Private repository published at the URL below; main branch verified | Grant judges repository access |
+| Video | A 15:26 local walkthrough recording exists; it predates the new judge console and is git-ignored | Refresh to show the Demo checklist/console, upload to YouTube unlisted, and verify access |
+| Report | `docs/report.md` and five-page `docs/report.pdf` draft with reproduced metrics | Update with final public-host evidence/URLs and keep within five pages |
+| Training/evaluation evidence | Drive-trained v2.1.0 artifact, dataset checksums, frozen configuration, saved model comparisons, 75/25 scores, and diagnostics | Keep judges' holdout unseen; describe synthetic-data and language-coverage limitations |
 
 ## Final links
 
-- Live demo: pending
-- Evaluation API base URL: pending
+- Live demo: https://tensorforge-phase2.vercel.app/
+- Evaluation API base URL: https://tensorforge-phase2.vercel.app
 - GitHub repository: https://github.com/geemalfernando/tensorforge-phase2 (private; judges require access)
 - Local verified image: `tensorforge-phase2:drive-2.0` (registry publishing pending)
-- Unlisted video: pending
+- Unlisted video: pending refresh and upload
 - Report PDF: `docs/report.pdf` (draft)
 
 ## Container verification commands

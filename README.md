@@ -108,13 +108,13 @@ When the GHCR package is available, that image serves the frontend and API toget
 
 ### Dashboard workflows
 
-The ResolveX-style workspace has five views: Ticket intake, Live operations, Support queue, Batch workbench, and Model lab. Intake supports chat, email subject/body, and call transcripts. Predictions enter the current browser session queue. Urgent and low-confidence tickets enter support review; an agent can confirm the team or record a routing override with a reason. Review decisions are session demo state, reset on refresh, and leave canonical model predictions unchanged.
+The ResolveX-style workspace has six views: Ticket intake, Live operations, Support queue, Batch workbench, Model lab, and Judge demo. The floating **Demo** button opens the judge checklist, evaluation evidence, API contract route list, and key-gated test console. Intake supports chat, email subject/body, and call transcripts. Predictions enter the current browser session queue. Urgent and low-confidence tickets enter support review; an agent can confirm the team or record a routing override with a reason. Review decisions are session demo state, reset on refresh, and leave canonical model predictions unchanged.
 
 The batch workbench accepts JSON so a dataset can be pasted or uploaded as one portable, predictable payload with a unique `ticket_id`, `channel`, and `text` for each ticket (with optional `subject` or `language`). The API validates the batch, preserves input order, and returns matching predictions. It processes 1–100 tickets synchronously or 101–5,000 asynchronously, polls progress, supports cancellation, and downloads all results. Its preview shows up to 100 rows. The model lab reads actual loaded classifier classes and saved validation metrics from the server.
 
 The dashboard is responsive down to 320px: workspace navigation scrolls horizontally on touch screens, and primary actions keep touch-friendly targets. The main views were checked at 320, 360, 390, 430, 768, and 1024px.
 
-The browser calls `/dashboard/api/...`; the server supplies its configured key internally. There is no API-key prompt or browser secret. Direct judging routes require the exact evaluation key. See [ResolveX adaptation details](docs/resolvex-adaptation.md) for source provenance and the three-model replacement.
+The regular workspace calls `/dashboard/api/...`; the server supplies its configured key internally without exposing it to the browser. The separate Judge demo asks the evaluator to enter a key, verifies it with `/auth/verify`, then keeps it in page memory only while the test console is open; it is never written to browser storage and **Sign out & clear key** removes it. See [ResolveX adaptation details](docs/resolvex-adaptation.md) for source provenance and the three-model replacement.
 
 For frontend development, run `npm run dev --prefix frontend` alongside the API, and open the URL printed by Vite. Rebuild with `npm run build --prefix frontend` to update the UI served by FastAPI. Node is needed only to build the UI; Docker handles this in its build stage.
 

@@ -1,6 +1,6 @@
 # Walkthrough video
 
-`fresh-desk-walkthrough.mp4` (1080p, 15:26) is the Phase 2 walkthrough with machine narration. `fresh-desk-walkthrough.srt` holds its subtitles; upload both to YouTube as an unlisted video. The narration text, with timestamps, is in [docs/video-script.md](../docs/video-script.md). The MP4 is git-ignored.
+`fresh-desk-walkthrough.mp4` (1080p, 15:26) is the Phase 2 walkthrough with machine narration. It predates the Judge demo checklist and key-gated API console, so refresh it before submission. `fresh-desk-walkthrough.srt` holds its subtitles; upload both to YouTube as an unlisted video after refreshing. The narration text, with timestamps, is in [docs/video-script.md](../docs/video-script.md). The MP4 is git-ignored.
 
 ## Rebuild after editing the narration
 

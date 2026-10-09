@@ -160,7 +160,7 @@ def slide_architecture(s, show):
  <div class='arch'>
  <div class='docker{vis(5, show)}'><div class='tag'>Docker image · --network none · API_KEY from env</div></div>
  {box(0, 'judges', "Judges' harness", "<p>Calls the API directly<br><code>X-API-Key</code> or <code>Authorization: Bearer</code></p>")}
- {box(1, 'browser', 'Fresh Desk dashboard', "<p>Same-origin <code>/dashboard/api</code><br>server adds the key — never in the browser</p>")}
+ {box(1, 'browser', 'Fresh Desk · regular + judge console', "<p>Workspace: server bridge<br>Judge console: key in page memory only</p>")}
  {box(2, 'api', 'FastAPI · checks in contract order', f"<div class='chain'>{steps}</div>")}
  {box(3, 'model', 'Ticket model', "<p>3 trained pipelines<br>+ fixed category → team map<br>+ consistency rules</p>")}
  {box(4, 'jobs', 'Async batch jobs', "<p>Background worker<br>SQLite job + result store<br>≤ 5,000 tickets per job</p>")}

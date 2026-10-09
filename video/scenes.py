@@ -77,9 +77,10 @@ SCENES = [
          items=["judges", "browser", "api", "model", "jobs", "docker"],
          beats=[
              dict(show=2, say="Here is the architecture. There are two ways in. On the left, the judges' evaluation harness "
-                              "calls the API directly with the team API key. Below it, the Fresh Desk dashboard in the browser. "
-                              "The browser never holds the key: it calls a same-origin dashboard route, and the server attaches "
-                              "the key internally."),
+                              "calls the API directly with the team API key. Below it, Fresh Desk has a regular workspace and "
+                              "a separate Judge demo console. The regular workspace uses a same-origin server bridge, so the "
+                              "configured server key never reaches the browser. In the Judge console, the evaluator enters "
+                              "their own key; it is verified by the API and held in page memory only until sign-out."),
              dict(show=3, say="Every protected request goes through the same checks, in the order the contract requires: "
                               "authentication first, then content type, then payload size, then JSON parsing, and finally field "
                               "validation. An unauthorised request never reaches the parser or the model."),
