@@ -314,6 +314,14 @@ export default function App() {
         </div>
       </header>
       <main className="page-shell space-y-6 animate-fade-up">
+        {error && (
+          <p
+            role="alert"
+            className="rounded-2xl bg-rose-50 p-4 text-sm text-rose-800"
+          >
+            {error}
+          </p>
+        )}
         {page === "home" ? <Landing onStart={()=>navigate("intake")} onModels={()=>navigate("models")} onSupport={()=>navigate("support")}/> : <div key={page} className="fresh-page space-y-6">
         <PageHero page={page} />
         <section
@@ -333,14 +341,6 @@ export default function App() {
             </article>
           ))}
         </section>
-        {error && (
-          <p
-            role="alert"
-            className="rounded-2xl bg-rose-50 p-4 text-sm text-rose-800"
-          >
-            {error}
-          </p>
-        )}
         {notice && (
           <p
             role="status"
