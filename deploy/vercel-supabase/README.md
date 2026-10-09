@@ -5,7 +5,7 @@ This project can deploy the dashboard and FastAPI application in one Vercel proj
 ## 1. Link the project
 
 1. Push the repository to a Git provider and import it into Vercel.
-2. Choose the **Services** preset and keep the project root set to the repository root (not `frontend/`). The checked-in `vercel.json` defines a Vite `frontend` service and a FastAPI `app` service, then sends API paths to FastAPI and the remaining paths to the frontend. The Python service uses Vercel's automatic dependency installation and bundle optimization; do not override its install command.
+2. Choose the **Services** preset and keep the project root set to the repository root (not `frontend/`). The checked-in `vercel.json` defines a Vite `frontend` service and a FastAPI `app` service, then sends API paths to FastAPI and the remaining paths to the frontend. Python runtime dependencies are declared in both `pyproject.toml` (for Vercel Queues/Python builds) and `requirements.txt` (for local/Docker use); keep the pinned lists synchronized. The Python service uses Vercel's automatic dependency installation and bundle optimization; do not override its install command.
 3. Vercel builds each service independently. The Vite service writes its deployment assets to `dist`; local builds continue to generate `app/static/ui`.
 4. Enable Vercel Queues for the project. The subscriber in `app/batch_worker.py` is registered in `pyproject.toml`; the SDK uses Vercel's deployment identity for queue calls.
 
