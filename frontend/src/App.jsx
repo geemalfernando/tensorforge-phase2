@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { api, label, download, sessionRequest, serviceUrl } from "./lib/api";
+import { api, label, download, sessionRequest, serviceRequest } from "./lib/api";
 import TicketPanel from "./components/TicketPanel";
 import Landing from "./components/Landing";
 import FreshSurface, { Count, Words } from "./components/FreshSurface";
@@ -98,19 +98,21 @@ export default function App() {
     const load = async () => {
       try {
         const [h, a, m] = await Promise.all([
-          fetch(serviceUrl("/health")).then((r) => r.json()),
-          fetch(serviceUrl("/dashboard/status")).then((r) => r.json()),
-          fetch(serviceUrl("/dashboard/models")).then((r) => r.json()),
+          serviceRequest("/health"),
+          serviceRequest("/dashboard/status"),
+          serviceRequest("/dashboard/models"),
         ]);
         if (mounted.current) {
           setHealth(h);
           setAccess(a.configured);
           setModels(m.models ? m : null);
         }
-      } catch {
+      } catch (error) {
         if (mounted.current) {
           setHealth(null);
           setAccess(false);
+          setModels(null);
+          setError(error.message);
         }
       }
     };

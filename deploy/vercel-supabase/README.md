@@ -11,7 +11,7 @@ This project can deploy the dashboard and FastAPI application in one Vercel proj
 
 ## 2. Configure Supabase PostgreSQL
 
-Create a Supabase project, then copy its **Transaction pooler** connection string from **Connect**. Use this URL as `DATABASE_URL` in Vercel. Transaction mode is intended for serverless connections; the app disables prepared statements for compatibility. Do not use a frontend variable such as `VITE_DATABASE_URL`.
+Create a Supabase project, then copy its **Transaction pooler** connection string from **Connect**. Use this URL as `DATABASE_URL` in Vercel. It should use the pooler host and port `6543`, not the direct database host on port `5432`. If you replace the password placeholder, URL-encode reserved characters in the password (for example, `@` as `%40`) before saving the URI. Transaction mode is intended for serverless connections; the app disables prepared statements for compatibility. Do not use a frontend variable such as `VITE_DATABASE_URL`.
 
 The app creates its three tables (`jobs`, `dashboard_sessions`, and `support_tickets`) when the API starts. Keep the default Supabase database role in the URL so it can create these tables. The PostgreSQL connection is opened only for each short operation and then closed, leaving connection pooling to Supabase.
 
