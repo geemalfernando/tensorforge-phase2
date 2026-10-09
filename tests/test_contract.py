@@ -14,6 +14,7 @@ from jsonschema import Draft202012Validator, FormatChecker, ValidationError
 
 from app import main
 from app.jobs import JobManager
+from app.model import MODEL_VERSION, TicketModel
 
 CONTRACT = yaml.safe_load((Path(__file__).resolve().parents[1] / "tensorforge-phase2-openapi-v2.yaml").read_text(encoding="utf-8"))
 HEADERS = {"X-API-Key": "test-evaluation-key", "X-Request-ID": "contract-check"}
@@ -294,3 +295,39 @@ def test_restart_marks_interrupted_job_failed(client, tmp_path):
         assert expired is False
     finally:
         restarted.close()
+
+
+def test_running_job_resumes_from_its_last_saved_chunk(tmp_path):
+    model = TicketModel.load()
+    manager = JobManager(model, str(tmp_path / "resume.sqlite3"))
+    tickets = [sample("resume-1"), sample("resume-2")]
+    first_prediction = model.predict_many(tickets[:1])
+    with manager._connect() as connection:
+        connection.execute(
+            """
+            INSERT INTO jobs (
+                job_id, status, total, processed, tickets_json, results_json,
+                created_at, started_at, model_version
+            ) VALUES (?, 'running', 2, 1, ?, ?, ?, ?, ?)
+            """,
+            (
+                "resumable-job",
+                json.dumps(tickets),
+                json.dumps(first_prediction),
+                "2026-10-07T00:00:00Z",
+                "2026-10-07T00:00:00Z",
+                MODEL_VERSION,
+            ),
+        )
+    try:
+        manager._run_job("resumable-job")
+        status, expired = manager.get_status("resumable-job")
+        results, state = manager.get_results("resumable-job", 0, None)
+        assert status["status"] == "succeeded"
+        assert status["processed"] == 2
+        assert expired is False
+        assert state == "ok"
+        assert results["predictions"][0] == first_prediction[0]
+        assert len(results["predictions"]) == 2
+    finally:
+        manager.close()

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { api, label, download, sessionRequest } from "./lib/api";
+import { api, label, download, sessionRequest, serviceUrl } from "./lib/api";
 import TicketPanel from "./components/TicketPanel";
 import Landing from "./components/Landing";
 import FreshSurface, { Count, Words } from "./components/FreshSurface";
@@ -98,9 +98,9 @@ export default function App() {
     const load = async () => {
       try {
         const [h, a, m] = await Promise.all([
-          fetch("/health").then((r) => r.json()),
-          fetch("/dashboard/status").then((r) => r.json()),
-          fetch("/dashboard/models").then((r) => r.json()),
+          fetch(serviceUrl("/health")).then((r) => r.json()),
+          fetch(serviceUrl("/dashboard/status")).then((r) => r.json()),
+          fetch(serviceUrl("/dashboard/models")).then((r) => r.json()),
         ]);
         if (mounted.current) {
           setHealth(h);

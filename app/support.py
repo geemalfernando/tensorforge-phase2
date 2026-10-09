@@ -3,12 +3,12 @@ import hashlib
 import json
 import os
 import secrets
-import sqlite3
 import time
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
+from app.database import connect
 
 DEFAULT_AUTO_APPROVE_CONFIDENCE = 0.8
 
@@ -36,15 +36,8 @@ class SupportStore:
 
     @contextmanager
     def connect(self):
-        connection = sqlite3.connect(self.db_path, timeout=10)
-        try:
+        with connect(self.db_path) as connection:
             yield connection
-            connection.commit()
-        except Exception:
-            connection.rollback()
-            raise
-        finally:
-            connection.close()
 
     @staticmethod
     def token_hash(token):
@@ -56,7 +49,7 @@ class SupportStore:
         hashed = self.token_hash(token)
         with self.connect() as connection:
             row = connection.execute('SELECT role, expires FROM dashboard_sessions WHERE token_hash=?',(hashed,)).fetchone()
-        return hashed if row and row[0] == role and row[1] > time.time() else None
+        return hashed if row and row['role'] == role and row['expires'] > time.time() else None
 
     def create_session(self, role):
         token = secrets.token_urlsafe(32)
@@ -89,21 +82,24 @@ class SupportStore:
 
     def list_tickets(self, owner, support=False):
         with self.connect() as connection:
-            rows=connection.execute('SELECT record_json FROM support_tickets '+('' if support else 'WHERE owner=? ')+ 'ORDER BY created_at DESC, rowid DESC LIMIT 5000',() if support else (owner,)).fetchall()
-        return [json.loads(row[0]) for row in rows]
+            rows=connection.execute('SELECT record_json FROM support_tickets '+('' if support else 'WHERE owner=? ')+ 'ORDER BY created_at DESC, id DESC LIMIT 5000',() if support else (owner,)).fetchall()
+        return [json.loads(row['record_json']) for row in rows]
 
     def get_ticket(self, ticket_id, owner, support=False):
         with self.connect() as connection:
             row=connection.execute('SELECT owner,record_json FROM support_tickets WHERE id=?',(ticket_id,)).fetchone()
-        return json.loads(row[1]) if row and (support or row[0]==owner) else None
+        return json.loads(row['record_json']) if row and (support or row['owner']==owner) else None
 
     def accept(self, ticket_id, team, notes):
         with self.connect() as connection:
-            connection.execute('BEGIN IMMEDIATE')
-            row=connection.execute('SELECT record_json FROM support_tickets WHERE id=?',(ticket_id,)).fetchone()
+            if connection.is_postgres:
+                row=connection.execute('SELECT record_json FROM support_tickets WHERE id=? FOR UPDATE',(ticket_id,)).fetchone()
+            else:
+                connection.execute('BEGIN IMMEDIATE')
+                row=connection.execute('SELECT record_json FROM support_tickets WHERE id=?',(ticket_id,)).fetchone()
             if not row:
                 return None,'not_found'
-            record=json.loads(row[0])
+            record=json.loads(row['record_json'])
             if record['state']=='accepted':
                 return None,'already_accepted'
             if team != record['prediction']['team'] and not notes:

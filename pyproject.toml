@@ -1,0 +1,5 @@
+[tool.vercel]
+entrypoint = "app.main:app"
+
+[[tool.vercel.subscribers]]
+entrypoint = "app.batch_worker:process_batch_job"

@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import sqlite3
 import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -10,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
+from app.database import connect, using_postgres
 from app.model import MODEL_VERSION, TicketModel
 
 logger = logging.getLogger(__name__)
@@ -30,23 +30,20 @@ class JobManager:
     def __init__(self, model: TicketModel, db_path: Optional[str] = None) -> None:
         self.model = model
         self.db_path = Path(db_path or os.environ.get("JOB_DB_PATH", "data/jobs.sqlite3"))
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self.postgres = using_postgres()
+        if not self.postgres:
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.lock = threading.RLock()
-        self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="batch-job")
+        self.queue_mode = self.postgres and os.environ.get("VERCEL") == "1"
+        self.executor = None if self.queue_mode else ThreadPoolExecutor(
+            max_workers=1, thread_name_prefix="batch-job"
+        )
         self._initialize()
 
     @contextmanager
-    def _connect(self) -> Iterator[sqlite3.Connection]:
-        connection = sqlite3.connect(str(self.db_path), timeout=10)
-        connection.row_factory = sqlite3.Row
-        try:
+    def _connect(self) -> Iterator[Any]:
+        with connect(self.db_path) as connection:
             yield connection
-            connection.commit()
-        except Exception:
-            connection.rollback()
-            raise
-        finally:
-            connection.close()
 
     def _initialize(self) -> None:
         with self._connect() as connection:
@@ -69,43 +66,50 @@ class JobManager:
                 )
                 """
             )
-            columns = {row["name"] for row in connection.execute("PRAGMA table_info(jobs)")}
-            if "model_version" not in columns:
-                connection.execute("ALTER TABLE jobs ADD COLUMN model_version TEXT")
+            if self.postgres:
+                connection.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS model_version TEXT")
+            else:
+                columns = {row["name"] for row in connection.execute("PRAGMA table_info(jobs)")}
+                if "model_version" not in columns:
+                    connection.execute("ALTER TABLE jobs ADD COLUMN model_version TEXT")
             # Preserve the generating model when serving retained results after retraining.
             for row in connection.execute("SELECT job_id, results_json FROM jobs WHERE model_version IS NULL"):
                 predictions = json.loads(row["results_json"]) if row["results_json"] else []
                 version = predictions[0].get("model_version", MODEL_VERSION) if predictions else MODEL_VERSION
                 connection.execute("UPDATE jobs SET model_version=? WHERE job_id=?", (version, row["job_id"]))
-            now = utc_now()
-            expiry = timestamp(now + RETENTION)
-            connection.execute(
-                """
-                UPDATE jobs
-                SET status='failed', finished_at=?, expires_at=?,
-                    error_json=?
-                WHERE status IN ('queued', 'running')
-                """,
-                (
-                    timestamp(now),
-                    expiry,
-                    json.dumps(
-                        {
-                            "code": "interrupted",
-                            "message": "Service restarted while the job was running.",
-                        }
+            if not self.postgres:
+                now = utc_now()
+                expiry = timestamp(now + RETENTION)
+                connection.execute(
+                    """
+                    UPDATE jobs
+                    SET status='failed', finished_at=?, expires_at=?,
+                        error_json=?
+                    WHERE status IN ('queued', 'running')
+                    """,
+                    (
+                        timestamp(now),
+                        expiry,
+                        json.dumps(
+                            {
+                                "code": "interrupted",
+                                "message": "Service restarted while the job was running.",
+                            }
+                        ),
                     ),
-                ),
-            )
+                )
 
     def close(self) -> None:
-        self.executor.shutdown(wait=False)
+        if self.executor is not None:
+            self.executor.shutdown(wait=False)
 
     def submit(
         self, tickets: List[Dict[str, Any]], idempotency_key: Optional[str]
     ) -> Tuple[Dict[str, Any], bool]:
         with self.lock:
             with self._connect() as connection:
+                if self.postgres:
+                    connection.execute("SELECT pg_advisory_xact_lock(804231907)")
                 if idempotency_key:
                     existing = connection.execute(
                         "SELECT * FROM jobs WHERE idempotency_key=?",
@@ -143,10 +147,11 @@ class JobManager:
                 ).fetchone()
                 status = self._status_from_row(row)
 
-            self.executor.submit(self._run_job, job_id)
+            if self.executor is not None:
+                self.executor.submit(self._run_job, job_id)
             return status, True
 
-    def _status_from_row(self, row: sqlite3.Row) -> Dict[str, Any]:
+    def _status_from_row(self, row: Any) -> Dict[str, Any]:
         error = json.loads(row["error_json"]) if row["error_json"] else None
         return {
             "job_id": row["job_id"],
@@ -161,7 +166,7 @@ class JobManager:
             "error": error,
         }
 
-    def _get_row(self, job_id: str) -> Optional[sqlite3.Row]:
+    def _get_row(self, job_id: str) -> Optional[Any]:
         with self._connect() as connection:
             return connection.execute(
                 "SELECT * FROM jobs WHERE job_id=?", (job_id,)
@@ -205,6 +210,29 @@ class JobManager:
             "ok",
         )
 
+    def mark_queue_failure(self, job_id: str) -> None:
+        finished = utc_now()
+        with self._connect() as connection:
+            connection.execute(
+                """
+                UPDATE jobs
+                SET status='failed', finished_at=?, expires_at=?, error_json=?,
+                    tickets_json='[]', results_json=NULL
+                WHERE job_id=? AND status='queued'
+                """,
+                (
+                    timestamp(finished),
+                    timestamp(finished + RETENTION),
+                    json.dumps(
+                        {
+                            "code": "queue_unavailable",
+                            "message": "The batch job could not be submitted for processing.",
+                        }
+                    ),
+                    job_id,
+                ),
+            )
+
     def _discard_expired_data(self, job_id: str) -> None:
         with self._connect() as connection:
             connection.execute(
@@ -238,19 +266,22 @@ class JobManager:
     def _run_job(self, job_id: str) -> None:
         with self.lock, self._connect() as connection:
             row = connection.execute(
-                "SELECT status, tickets_json FROM jobs WHERE job_id=?", (job_id,)
+                "SELECT status, tickets_json, results_json, processed FROM jobs WHERE job_id=?",
+                (job_id,),
             ).fetchone()
-            if row is None or row["status"] != "queued":
+            if row is None or row["status"] not in {"queued", "running"}:
                 return
-            connection.execute(
-                "UPDATE jobs SET status='running', started_at=? WHERE job_id=?",
-                (timestamp(utc_now()), job_id),
-            )
+            if row["status"] == "queued":
+                connection.execute(
+                    "UPDATE jobs SET status='running', started_at=? WHERE job_id=?",
+                    (timestamp(utc_now()), job_id),
+                )
             tickets = json.loads(row["tickets_json"])
+            predictions = json.loads(row["results_json"]) if row["results_json"] else []
+            processed = row["processed"]
 
-        predictions: List[Dict[str, Any]] = []
         try:
-            for start in range(0, len(tickets), CHUNK_SIZE):
+            for start in range(processed, len(tickets), CHUNK_SIZE):
                 with self.lock:
                     current = self._get_row(job_id)
                     if current is None or current["status"] != "running":
@@ -265,8 +296,12 @@ class JobManager:
                     if current is None or current["status"] != "running":
                         return
                     connection.execute(
-                        "UPDATE jobs SET processed=? WHERE job_id=?",
-                        (len(predictions), job_id),
+                        "UPDATE jobs SET processed=?, results_json=? WHERE job_id=?",
+                        (
+                            len(predictions),
+                            json.dumps(predictions, ensure_ascii=False),
+                            job_id,
+                        ),
                     )
 
             finished = utc_now()

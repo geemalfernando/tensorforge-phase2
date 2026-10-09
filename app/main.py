@@ -15,6 +15,7 @@ from starlette.concurrency import run_in_threadpool
 from dotenv import load_dotenv
 
 from app.jobs import JobManager
+from app.database import database_url
 from app.model import MODEL_PATH, MODEL_VERSION, TicketModel
 from app.support import SupportStore
 from app.support_routes import register_support_routes
@@ -37,6 +38,8 @@ support: Optional[SupportStore] = None
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     global model, jobs, support
+    if os.environ.get("VERCEL") == "1" and database_url() is None:
+        raise RuntimeError("DATABASE_URL must be configured for Vercel deployments.")
     model = TicketModel.load(MODEL_PATH)
     jobs = JobManager(model)
     support = SupportStore(jobs.db_path)
@@ -74,9 +77,26 @@ app.openapi = contract_openapi
 
 def dashboard_origin_allowed(request):
     origin = request.headers.get("origin")
-    return (request.headers.get("X-TensorForge-Dashboard") == "1"
-            and request.headers.get("sec-fetch-site") != "cross-site"
-            and (origin is None or origin == "{}://{}".format(request.url.scheme, request.url.netloc)))
+    same_origin = "{}://{}".format(request.url.scheme, request.url.netloc)
+    configured_origins = _dashboard_origins()
+    normalized_origin = origin.rstrip("/") if origin else None
+    origin_allowed = (
+        origin is None
+        or normalized_origin == same_origin
+        or normalized_origin in configured_origins
+    )
+    same_site = request.headers.get("sec-fetch-site") != "cross-site"
+    return request.headers.get("X-TensorForge-Dashboard") == "1" and origin_allowed and (
+        same_site or normalized_origin in configured_origins
+    )
+
+
+def _dashboard_origins():
+    return {
+        value.strip().rstrip("/")
+        for value in os.environ.get("DASHBOARD_ORIGINS", "").split(",")
+        if value.strip()
+    }
 
 
 @app.middleware("http")
@@ -93,8 +113,6 @@ async def dashboard_api_access(request: Request, call_next):
         )
         if not allowed:
             return error_response(404, "not_found", "The requested resource was not found.")
-        origin = request.headers.get("origin")
-        expected_origin = "{}://{}".format(request.url.scheme, request.url.netloc)
         if (
             not dashboard_origin_allowed(request)
         ):
@@ -449,6 +467,24 @@ async def submit_batch_job(request: Request):
             "Job queue is full. Retry later.",
             headers={"Retry-After": "3"},
         )
+    if manager.queue_mode:
+        try:
+            from vercel.queue import send
+
+            await send(
+                "tensorforge-batch-jobs",
+                {"job_id": status["job_id"]},
+                idempotency_key=status["job_id"],
+            )
+        except Exception:
+            logger.exception("Unable to enqueue batch job %s", status["job_id"])
+            manager.mark_queue_failure(status["job_id"])
+            return error_response(
+                503,
+                "queue_unavailable",
+                "The batch job could not be submitted for processing. Retry the request.",
+                headers={"Retry-After": "3"},
+            )
     return JSONResponse(
         status_code=202,
         content=status,
@@ -530,3 +566,47 @@ async def favicon():
 
 
 register_support_routes(app, sys.modules[__name__])
+
+
+@app.middleware("http")
+async def dashboard_cors(request: Request, call_next):
+    origin = request.headers.get("origin")
+    if request.method == "OPTIONS" and request.headers.get("access-control-request-method"):
+        allowed_methods = {"GET", "POST", "DELETE"}
+        allowed_headers = {
+            "content-type",
+            "idempotency-key",
+            "x-request-id",
+            "x-tensorforge-dashboard",
+        }
+        requested_method = request.headers["access-control-request-method"].upper()
+        requested_headers = {
+            value.strip().lower()
+            for value in request.headers.get("access-control-request-headers", "").split(",")
+            if value.strip()
+        }
+        if (
+            origin is None
+            or origin.rstrip("/") not in _dashboard_origins()
+            or requested_method not in allowed_methods
+            or not requested_headers.issubset(allowed_headers)
+        ):
+            return error_response(403, "forbidden", "Dashboard requests must come from an approved origin.")
+        response = Response(status_code=204)
+    else:
+        response = await call_next(request)
+        if origin is None or origin.rstrip("/") not in _dashboard_origins():
+            return response
+
+    response.headers["Access-Control-Allow-Origin"] = origin
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = (
+        "Content-Type, Idempotency-Key, X-Request-ID, X-TensorForge-Dashboard"
+    )
+    response.headers["Access-Control-Expose-Headers"] = "Location, Retry-After, X-Request-ID"
+    response.headers["Access-Control-Max-Age"] = "600"
+    vary = {value.strip() for value in response.headers.get("Vary", "").split(",") if value.strip()}
+    vary.add("Origin")
+    response.headers["Vary"] = ", ".join(sorted(vary))
+    return response

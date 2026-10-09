@@ -69,6 +69,26 @@ def test_shared_support_queue_persists_and_requires_override_reason(client,monke
     assert client.post(path,headers=HEADERS,json={'team':'Food Operations'}).status_code==403
 
 
+def test_cross_origin_support_cookie_is_secure_and_usable(client,monkeypatch):
+    monkeypatch.setenv('DASHBOARD_ORIGINS','https://tensorforge-demo.vercel.app')
+    monkeypatch.setenv('SUPPORT_PASSWORD','private-support-test-password')
+    headers={
+        'Origin':'https://tensorforge-demo.vercel.app',
+        'Sec-Fetch-Site':'cross-site',
+        'X-Forwarded-Proto':'https',
+        'X-TensorForge-Dashboard':'1',
+    }
+    response=client.post(
+        '/dashboard/support/login',
+        headers=headers,
+        json={'password':'private-support-test-password'},
+    )
+    assert response.status_code==200
+    cookie=response.headers['set-cookie']
+    assert 'SameSite=none' in cookie
+    assert 'Secure' in cookie
+
+
 def test_support_auth_fails_closed_and_rejects_cross_site(client,monkeypatch):
     monkeypatch.delenv('SUPPORT_PASSWORD',raising=False)
     assert client.post('/dashboard/support/login',headers=HEADERS,json={'password':'anything'}).status_code==503

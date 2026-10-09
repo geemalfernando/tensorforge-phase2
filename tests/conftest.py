@@ -8,5 +8,6 @@ from app.main import app
 def client(monkeypatch, tmp_path):
     monkeypatch.setenv("API_KEY", "test-evaluation-key")
     monkeypatch.setenv("JOB_DB_PATH", str(tmp_path / "jobs.sqlite3"))
+    monkeypatch.delenv("DATABASE_URL", raising=False)
     with TestClient(app) as test_client:
         yield test_client

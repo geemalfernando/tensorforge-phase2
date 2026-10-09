@@ -3,6 +3,7 @@ import re
 import time
 
 import pytest
+from app import main
 from app.model import MODEL_VERSION
 def headers():
     return {"X-API-Key": "test-evaluation-key"}
@@ -20,6 +21,44 @@ def test_health_is_public_and_dashboard_assets_load(client):
     assert "TensorForge" in client.get("/").text
     stylesheet = re.search(r'href="([^\"]+\.css)"', client.get("/").text).group(1)
     assert client.get(stylesheet).status_code == 200
+
+
+def test_vercel_origin_cors_and_dashboard_api_proxy(client, monkeypatch):
+    origin = "https://tensorforge-demo.vercel.app"
+    monkeypatch.setenv("DASHBOARD_ORIGINS", origin)
+    preflight = client.options(
+        "/dashboard/api/predict",
+        headers={
+            "Origin": origin,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type,x-tensorforge-dashboard",
+        },
+    )
+    assert preflight.status_code == 204
+    assert preflight.headers["access-control-allow-origin"] == origin
+    assert preflight.headers["access-control-allow-credentials"] == "true"
+
+    prediction = client.post(
+        "/dashboard/api/predict",
+        headers={
+            "Origin": origin,
+            "Sec-Fetch-Site": "cross-site",
+            "X-TensorForge-Dashboard": "1",
+        },
+        json=ticket(),
+    )
+    assert prediction.status_code == 200
+    assert prediction.headers["access-control-allow-origin"] == origin
+
+    denied = client.options(
+        "/dashboard/api/predict",
+        headers={
+            "Origin": "https://untrusted.example",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+    assert denied.status_code == 403
 
 
 def test_dashboard_reports_three_real_models_without_secrets(client):
@@ -59,6 +98,38 @@ def test_verify_access_checks_key_without_classifying(client, monkeypatch):
     assert client.post("/auth/verify", headers={"Authorization": "Bearer test-evaluation-key"}).status_code == 200
     monkeypatch.delenv("API_KEY")
     assert client.post("/auth/verify", headers=headers()).status_code == 401
+
+
+def test_vercel_batch_submission_publishes_an_idempotent_queue_message(client, monkeypatch):
+    import vercel.queue
+
+    manager = main.jobs
+    assert manager is not None
+    monkeypatch.setattr(manager, "queue_mode", True)
+    monkeypatch.setattr(
+        manager,
+        "submit",
+        lambda tickets, key: (
+            {"job_id": "queue-job", "status": "queued", "total": len(tickets)},
+            True,
+        ),
+    )
+    messages = []
+
+    async def send(topic, payload, idempotency_key=None):
+        messages.append((topic, payload, idempotency_key))
+
+    monkeypatch.setattr(vercel.queue, "send", send)
+    response = client.post(
+        "/batch/jobs",
+        json={"tickets": [ticket("queue-ticket")]},
+        headers={**headers(), "Idempotency-Key": "queue-request"},
+    )
+
+    assert response.status_code == 202
+    assert messages == [
+        ("tensorforge-batch-jobs", {"job_id": "queue-job"}, "queue-job")
+    ]
 
 
 def test_predictions_stay_closed_when_api_key_is_unset(client, monkeypatch):

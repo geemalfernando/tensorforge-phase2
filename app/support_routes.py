@@ -3,6 +3,7 @@ import os
 import time
 from collections import defaultdict
 from threading import Lock
+from urllib.parse import urlsplit
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
@@ -21,7 +22,18 @@ def register_support_routes(app, service):
         return owner,is_support
 
     def cookie(response, name, token, lifetime, request):
-        response.set_cookie(name,token,max_age=lifetime,httponly=True,samesite='strict',secure=request.url.scheme=='https')
+        origin = request.headers.get('origin')
+        origin_host = urlsplit(origin).hostname if origin else None
+        cross_site = origin_host is not None and origin_host != request.url.hostname
+        secure = request.url.scheme == 'https' or request.headers.get('x-forwarded-proto') == 'https'
+        response.set_cookie(
+            name,
+            token,
+            max_age=lifetime,
+            httponly=True,
+            samesite='none' if cross_site else 'strict',
+            secure=secure,
+        )
         response.headers['Cache-Control']='no-store'
 
     @app.get('/dashboard/session',include_in_schema=False)

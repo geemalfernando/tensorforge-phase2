@@ -1,7 +1,13 @@
 .env
 .venv/
+.venv-vercel/
 __pycache__/
 .pytest_cache/
 data/
 *.py[cod]
 node_modules/
+frontend/dist/
+
+# Generated walkthrough video (publish to YouTube instead of committing)
+video/*.mp4
+video/work/

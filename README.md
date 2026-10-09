@@ -4,7 +4,7 @@ A multilingual RideEat support-ticket classifier, API, and React dashboard adapt
 
 ## Start the API and dashboard
 
-Python 3.8+ is supported. Install dependencies, train the bundled workshop data, then start the service:
+Python 3.10+ is supported locally; Vercel runs Python 3.12. Install dependencies, train the bundled workshop data, then start the service:
 
 ```bash
 python -m venv .venv
@@ -32,7 +32,7 @@ docker build -t tensorforge-mvp .
 docker run -p 8000:8000 -e API_KEY='<your-team-key>' tensorforge-mvp
 ```
 
-`/health` works without a key. Provide the evaluation key to Docker through `-e API_KEY=...`; do not copy it into the image or commit it to the repository. The SQLite job database is stored at `/app/data/jobs.sqlite3`; mount a persistent volume at `/app/data` if batch jobs need to survive container replacement. Run one API process per SQLite job store.
+`/health` works without a key. Provide the evaluation key to Docker through `-e API_KEY=...`; do not copy it into the image or commit it to the repository. Without `DATABASE_URL`, the SQLite job database is stored at `/app/data/jobs.sqlite3`; mount a persistent volume at `/app/data` if batch jobs need to survive container replacement. For hosted PostgreSQL, set `DATABASE_URL` and use the Supabase transaction pooler. Run one API process per SQLite job store.
 
 ## API
 
@@ -56,6 +56,8 @@ The batch workbench loads JSON, processes 1â€“100 tickets synchronously or 101â€
 The browser calls `/dashboard/api/...`; the server supplies its configured key internally. There is no API-key prompt or browser secret. Direct judging routes require the exact evaluation key. See [ResolveX adaptation details](docs/resolvex-adaptation.md) for source provenance and the three-model replacement.
 
 For frontend development, run `npm run dev --prefix frontend` alongside the API, and open the URL printed by Vite. Rebuild with `npm run build --prefix frontend` to update the UI served by FastAPI. Node is needed only to build the UI; Docker handles this in its build stage.
+
+For a single-project deployment of the dashboard and API on Vercel with Supabase PostgreSQL and Vercel Queues, follow the [Vercel + Supabase deployment guide](deploy/vercel-supabase/README.md).
 
 Request examples:
 

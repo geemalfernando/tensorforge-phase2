@@ -3,7 +3,10 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [react()],
   base: "/static/ui/",
-  build: { outDir: "../app/static/ui", emptyOutDir: true },
+  build: {
+    outDir: "../app/static/ui",
+    emptyOutDir: true,
+  },
   server: {
     port: 5173,
     proxy: {
