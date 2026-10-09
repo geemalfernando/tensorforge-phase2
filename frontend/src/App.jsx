@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { api, label, download, sessionRequest } from "./lib/api";
 import TicketPanel from "./components/TicketPanel";
 import Landing from "./components/Landing";
+import FreshSurface, { Count, Words } from "./components/FreshSurface";
 
 const NAV = [
   ["home", "⌂", "Home"],
@@ -11,6 +12,41 @@ const NAV = [
   ["batch", "▤", "Batch workbench"],
   ["models", "⌁", "Model lab"],
 ];
+const PAGE_COPY = {
+  intake: ["Ticket intake", "Every ticket. The right team.", "From customer message to a clear route. Three locally trained models identify the issue, the second concern, and the need for urgent attention."],
+  ops: ["Live operations", "Every route, in one view.", "Follow ticket routing and review work across your current session."],
+  support: ["Support queue", "A thoughtful second look.", "Review urgent or uncertain predictions and accept tickets and confirm the support team."],
+  batch: ["Batch workbench", "Thousands of tickets. One run.", "Run a few tickets or an entire evaluation job. Track progress and export every prediction."],
+  models: ["Model lab", "Meet the models.", "Inspect the three trained models, development scores, and the fixed support routes."],
+};
+
+function PageHero({ page }) {
+  const [eyebrow, title, text] = PAGE_COPY[page];
+  return (
+    <section className="fresh-page-hero" data-spot>
+      <div className="fresh-hero-deco" aria-hidden="true">
+        <span className="fresh-hero-orbit" />
+        <span className="fresh-hero-orbit orbit-two" />
+        <span className="fresh-hero-spark">✳</span>
+      </div>
+      <div className="relative flex flex-wrap items-end justify-between gap-6">
+        <div>
+          <p className="fresh-hero-eyebrow"><span />{eyebrow} / Fresh Desk</p>
+          <h1 key={page} aria-label={title}>
+            <span aria-hidden="true"><Words text={title} /></span>
+          </h1>
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#add7c9]">{text}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {["සිංහල · தமிழ் · English", "3 trained models", "Offline inference"].map((pill, i) => (
+            <span key={pill} className="fresh-hero-pill" style={{ "--i": i }}>{pill}</span>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 const SAMPLES = [
   ["Late delivery", "mage order eka late, refund ekak denna"],
   [
@@ -125,7 +161,8 @@ export default function App() {
       const result = await api("/tickets", ticket);
       await refreshTickets();
       setSelectedId(result.records[0].id);
-      setNotice(result.records[0].state === "review" ? "Ticket submitted. Support approval is required." : "Ticket classified and routed.");
+      const state = result.records[0].state;
+      setNotice(state === "review" ? "Ticket submitted. Support approval is required." : state === "accepted" ? "High confidence: ticket auto-approved and routed." : "Ticket classified and routed.");
     } catch (e) {
       setError(e.message);
     } finally {
@@ -218,7 +255,7 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "instant" });
   }
   return (
-    <div className="app-surface min-h-screen">
+    <FreshSurface className="app-surface min-h-screen">
       <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-3 sm:px-6">
           <a
@@ -229,8 +266,8 @@ export default function App() {
             }}
             className="flex items-center gap-2"
           >
-            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-950 font-black text-white">
-              f
+            <span className="fresh-logo">
+              f<span>✳</span>
             </span>
             <span className="font-black tracking-tight">
               Fresh Desk
@@ -247,7 +284,7 @@ export default function App() {
               <button
                 key={id}
                 onClick={() => navigate(id)}
-                className={`shrink-0 rounded-xl px-3 py-2 text-sm font-semibold transition ${page === id ? "bg-slate-950 text-white" : "text-slate-500 hover:bg-slate-100"}`}
+                className={`shrink-0 rounded-xl px-3 py-2 text-sm font-semibold transition ${page === id ? "bg-[#133d36] text-white shadow-[0_10px_24px_-14px_#133d36]" : "text-slate-500 hover:bg-[#e8f3ee] hover:text-[#133d36]"}`}
               >
                 <span className="mr-2">{icon}</span>
                 {name}
@@ -275,43 +312,8 @@ export default function App() {
         </div>
       </header>
       <main className="page-shell space-y-6 animate-fade-up">
-        {page === "home" ? <Landing onStart={()=>navigate("intake")} onModels={()=>navigate("models")} onSupport={()=>navigate("support")}/> : <>
-        <section className="hero-panel overflow-hidden rounded-3xl bg-slate-950 p-6 text-white sm:p-8">
-          <div className="flex flex-wrap items-end justify-between gap-6">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[.2em] text-teal-300">
-                Support intelligence / RideEat
-              </p>
-              <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-                {page === "intake"
-                  ? "Every ticket. The right team."
-                  : NAV.find((n) => n[0] === page)?.[2]}
-              </h1>
-              <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-300">
-                {page === "intake"
-                  ? "From customer message to a clear route. Three locally trained models identify the issue, the second concern, and the need for urgent attention."
-                  : page === "ops"
-                    ? "Follow ticket routing and review work across your current session."
-                    : page === "support"
-                      ? "Review urgent or uncertain predictions and accept tickets and confirm the support team."
-                      : page === "batch"
-                        ? "Run a few tickets or an entire evaluation job. Track progress and export every prediction."
-                        : "Inspect the three trained models, development scores, and the fixed support routes."}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2 text-xs text-teal-100">
-              <span className="rounded-full bg-white/10 px-3 py-2">
-                සිංහල · தமிழ் · English
-              </span>
-              <span className="rounded-full bg-white/10 px-3 py-2">
-                3 trained models
-              </span>
-              <span className="rounded-full bg-white/10 px-3 py-2">
-                Offline inference
-              </span>
-            </div>
-          </div>
-        </section>
+        {page === "home" ? <Landing onStart={()=>navigate("intake")} onModels={()=>navigate("models")} onSupport={()=>navigate("support")}/> : <div key={page} className="fresh-page space-y-6">
+        <PageHero page={page} />
         <section
           className="grid grid-cols-2 gap-3 lg:grid-cols-4"
           aria-label="Session activity"
@@ -320,11 +322,11 @@ export default function App() {
             ["Classified", stats.total, "saved tickets"],
             ["Urgent", stats.urgent, "priority attention"],
             ["Needs review", stats.review, "waiting for a decision"],
-            ["Reviewed", stats.resolved, "team confirmed"],
+            ["Approved", stats.resolved, "auto or by support"],
           ].map(([name, value, caption]) => (
             <article key={name} className="metric-card">
               <p className="text-xs font-semibold text-slate-500">{name}</p>
-              <p className="my-2 text-3xl font-bold">{value}</p>
+              <p className="my-2 text-3xl font-bold"><Count value={value} /></p>
               <p className="text-xs text-slate-400">{caption}</p>
             </article>
           ))}
@@ -455,7 +457,7 @@ export default function App() {
               ) : (
                 <div className="grid min-h-96 place-items-center text-center">
                   <div>
-                    <div className="mx-auto mb-6 grid h-20 w-20 place-items-center rounded-3xl bg-teal-50 text-3xl text-teal-700">
+                    <div className="fresh-empty-icon mx-auto mb-6">
                       ◇
                     </div>
                     <p className="kicker">Prediction preview</p>
@@ -504,7 +506,7 @@ export default function App() {
                   <button
                     key={r.id}
                     onClick={() => setSelectedId(r.id)}
-                    className={`w-full rounded-2xl border bg-white p-4 text-left transition ${selected?.id === r.id ? "border-slate-900 shadow-sm" : "border-slate-200 hover:border-slate-400"}`}
+                    className={`fresh-ticket-row ${selected?.id === r.id ? "is-selected" : ""}`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <strong className="break-all text-sm">
@@ -733,9 +735,8 @@ export default function App() {
                       accuracy
                     </span>
                   </p>
-                  <div className="mt-3 h-2 rounded-full bg-slate-100">
+                  <div className="fresh-bar mt-3">
                     <div
-                      className="h-full rounded-full bg-teal-500"
                       style={{ width: `${m.validation.accuracy * 100}%` }}
                     />
                   </div>
@@ -774,7 +775,7 @@ export default function App() {
               <p className="kicker">Routing directory</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {Object.entries(models?.routes || {}).map(([c, t]) => (
-                  <div className="rounded-2xl bg-slate-50 p-4" key={c}>
+                  <div className="fresh-route-tile" key={c}>
                     <p className="text-sm font-bold">{t}</p>
                     <p className="mt-1 text-xs text-slate-500">{label(c)}</p>
                   </div>
@@ -783,7 +784,7 @@ export default function App() {
             </section>
           </>
         )}
-        </>}
+        </div>}
         <footer className="flex flex-wrap justify-between gap-3 border-t py-4 text-xs text-slate-400">
           <span>Fresh Desk · TensorForge Phase 2</span>
           <span>
@@ -792,6 +793,6 @@ export default function App() {
           </span>
         </footer>
       </main>
-    </div>
+    </FreshSurface>
   );
 }

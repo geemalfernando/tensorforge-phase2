@@ -158,7 +158,8 @@ async def json_http_error(_: Request, exc: StarletteHTTPException):
 
 
 def _authorize(request: Request) -> Optional[JSONResponse]:
-    expected = os.environ.get("API_KEY")
+    # Hosting dashboards and secret stores often add a trailing newline, so surrounding whitespace is ignored.
+    expected = (os.environ.get("API_KEY") or "").strip()
     if not expected:
         return error_response(
             401,
@@ -167,19 +168,25 @@ def _authorize(request: Request) -> Optional[JSONResponse]:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    supplied = request.headers.get("X-API-Key")
-    authorization = request.headers.get("Authorization", "")
-    if supplied is None and authorization.lower().startswith("bearer "):
-        supplied = authorization[7:].strip()
-    keys_match = supplied is not None and hmac.compare_digest(
-        supplied.encode("utf-8"), expected.encode("utf-8")
-    )
+    # The contract treats both headers as equivalent, so a valid key in either one is accepted.
+    candidates = []
+    header_key = request.headers.get("X-API-Key")
+    if header_key is not None:
+        candidates.append(header_key.strip())
+    scheme, _, token = request.headers.get("Authorization", "").strip().partition(" ")
+    if scheme.lower() == "bearer":
+        candidates.append(token.strip())
+    supplied = [key for key in candidates if key]
+    keys_match = False
+    for key in supplied:
+        # Compare every candidate so timing does not depend on which header held the key.
+        keys_match |= hmac.compare_digest(key.encode("utf-8"), expected.encode("utf-8"))
     if not keys_match:
         return error_response(
             401,
             "unauthorized",
             "Missing API key. Send X-API-Key or Authorization Bearer."
-            if supplied is None
+            if not supplied
             else "Invalid API key.",
             headers={"WWW-Authenticate": "Bearer"},
         )

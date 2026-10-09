@@ -9,7 +9,7 @@ export default function TicketPanel({ record, routes, onReview, role, models, on
   const analysis = record.analysis;
   return (
     <section className="space-y-5" data-testid="ticket-panel">
-      <div className="overflow-hidden rounded-2xl bg-slate-900 p-5 text-white">
+      <div className="fresh-result-card">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-[11px] uppercase tracking-widest text-teal-200">
@@ -130,7 +130,7 @@ export default function TicketPanel({ record, routes, onReview, role, models, on
         <button className="btn mt-3" type="submit" disabled={accepting}>
           {accepting ? "Accepting…" : "Accept ticket"}
         </button>
-      </form> : record.state === 'accepted' ? <section className="rounded-2xl bg-teal-50 p-4 text-sm text-teal-900"><strong>Accepted by support</strong><p className="mt-2">{record.finalTeam} · {new Date(record.reviewedAt).toLocaleString()}</p>{record.notes&&<p className="mt-2">{record.notes}</p>}</section> : record.state === 'review' ? <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4"><h3 className="text-sm font-bold">Waiting for support approval</h3><p className="mt-2 text-xs text-amber-900">A support team member must review and accept this ticket.</p><button className="btn-secondary mt-3" onClick={onOpenSupport}>Open support sign-in</button></section> : <p className="text-xs text-slate-500">Routed automatically. Support can review this ticket if needed.</p>}
+      </form> : record.state === 'accepted' ? <section className="rounded-2xl bg-teal-50 p-4 text-sm text-teal-900"><strong>{record.reviewedBy === 'auto' ? 'Auto-approved · high confidence' : 'Accepted by support'}</strong><p className="mt-2">{record.finalTeam} · {new Date(record.reviewedAt).toLocaleString()}</p>{record.notes&&<p className="mt-2">{record.notes}</p>}</section> : record.state === 'review' ? <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4"><h3 className="text-sm font-bold">Waiting for support approval</h3><p className="mt-2 text-xs text-amber-900">A support team member must review and accept this ticket.</p><button className="btn-secondary mt-3" onClick={onOpenSupport}>Open support sign-in</button></section> : <p className="text-xs text-slate-500">Routed automatically. Support can review this ticket if needed.</p>}
       <details className="rounded-2xl border p-4">
         <summary className="cursor-pointer text-sm font-semibold">
           Prediction JSON

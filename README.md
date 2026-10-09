@@ -73,6 +73,15 @@ curl http://localhost:8000/predict/batch \
 
 The API validates the full batch before returning any predictions, preserves input order, echoes ticket IDs, and returns JSON errors for malformed, invalid, oversized, unauthorized, and unknown-route requests. Async jobs accept 1–5,000 tickets and support idempotency keys, a one-running-plus-three-queued limit, persisted status/results, cancellation, restart marking, and 24-hour result retention (above the contract’s six-hour minimum). Deleting a queued/running job retains its `cancelled` status; deleting a finished job discards it.
 
+### Postman
+
+`postman/` holds a judge-style collection plus `TensorForge Local` and `TensorForge Hosted` environments. Import all three, pick an environment, set `api_key` (a secret variable, left empty in the files), and run the collection with the Collection Runner. It covers public `/health`; correct, wrong, and missing keys through `X-API-Key` and `Authorization: Bearer`; 400/404/415/422 errors; 1–100 ticket batches; and a 2,500-ticket async job through submit, idempotent resubmit, polling, paged results, 404, and delete. A collection-level test checks every returned prediction against the fixed category→team table and the consistency rules. The same run works from the command line:
+
+```bash
+npx newman run postman/TensorForge.postman_collection.json \
+  -e postman/TensorForge-Local.postman_environment.json --env-var api_key="$API_KEY"
+```
+
 ## Model and evaluation
 
 Training uses `channel`, `subject`, and `text`; ticket IDs and supplied language labels are excluded. The Drive archive was downloaded and verified against the local files: it contains the same 4,000 synthetic training tickets and 800 development validation tickets. Checksums and source details are recorded in `datasets/source_manifest.json`.

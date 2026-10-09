@@ -1,12 +1,24 @@
 """Durable dashboard tickets and role sessions, separate from evaluation jobs."""
 import hashlib
 import json
+import os
 import secrets
 import sqlite3
 import time
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
+
+
+DEFAULT_AUTO_APPROVE_CONFIDENCE = 0.8
+
+
+def auto_approve_confidence():
+    try:
+        value = float(os.environ.get('AUTO_APPROVE_CONFIDENCE', DEFAULT_AUTO_APPROVE_CONFIDENCE))
+    except ValueError:
+        return DEFAULT_AUTO_APPROVE_CONFIDENCE
+    return value if 0 < value <= 1 else DEFAULT_AUTO_APPROVE_CONFIDENCE
 
 
 def now_iso():
@@ -64,9 +76,13 @@ class SupportStore:
         with self.connect() as connection:
             for ticket, details in zip(tickets,analyses):
                 prediction=details['prediction']
+                state='review' if prediction['needs_human_review'] or prediction['is_urgent'] else 'routed'
                 record={'id':str(uuid.uuid4()),'ticket':ticket,'prediction':prediction,'analysis':details['analysis'],
-                        'state':'review' if prediction['needs_human_review'] or prediction['is_urgent'] else 'routed',
-                        'at':now_iso(),'notes':'','finalTeam':prediction['team'],'history':[]}
+                        'state':state,'at':now_iso(),'notes':'','finalTeam':prediction['team'],'history':[]}
+                # Confident, non-urgent tickets skip the support queue; urgent ones always get a person.
+                if state=='routed' and prediction['confidence']>=auto_approve_confidence():
+                    record.update(state='accepted',reviewedAt=record['at'],reviewedBy='auto')
+                    record['history'].append({'action':'auto_approved','role':'system','at':record['at'],'team':prediction['team'],'notes':''})
                 connection.execute('INSERT INTO support_tickets VALUES (?,?,?,?)',(record['id'],owner,json.dumps(record,ensure_ascii=False),record['at']))
                 records.append(record)
         return records

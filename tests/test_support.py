@@ -79,3 +79,20 @@ def test_support_auth_fails_closed_and_rejects_cross_site(client,monkeypatch):
     for _ in range(5):
         assert client.post('/dashboard/support/login',headers=HEADERS,json={'password':'wrong'}).status_code==401
     assert client.post('/dashboard/support/login',headers=HEADERS,json={'password':'support-secret'}).status_code==429
+
+
+def test_confident_tickets_are_auto_approved_but_urgent_ones_wait_for_support(client,monkeypatch):
+    confident={'channel':'chat','text':'My order has not arrived after an hour'}
+    record=client.post('/dashboard/api/tickets',headers=HEADERS,json=confident).json()['records'][0]
+    assert record['prediction']['confidence']>=0.8 and not record['prediction']['is_urgent']
+    assert record['state']=='accepted'
+    assert record['reviewedBy']=='auto'
+    assert record['finalTeam']==record['prediction']['team']
+    assert record['history'][0]['action']=='auto_approved'
+    urgent={'channel':'chat','text':'The driver is not stopping the car and I am scared.'}
+    flagged=client.post('/dashboard/api/tickets',headers=HEADERS,json=urgent).json()['records'][0]
+    assert flagged['prediction']['is_urgent']
+    assert flagged['state']=='review'
+    monkeypatch.setenv('AUTO_APPROVE_CONFIDENCE','1')
+    routed=client.post('/dashboard/api/tickets',headers=HEADERS,json=confident).json()['records'][0]
+    assert routed['state']=='routed'

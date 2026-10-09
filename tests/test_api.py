@@ -276,6 +276,43 @@ def test_all_prediction_and_job_routes_require_the_exact_key(client, method, pat
         assert response.json()["error"]["code"] == "unauthorized"
 
 
+def test_key_survives_whitespace_and_either_equivalent_header(client, monkeypatch):
+    monkeypatch.setenv("API_KEY", "test-evaluation-key\n")
+    accepted = [
+        {"X-API-Key": "test-evaluation-key"},
+        {"X-API-Key": " test-evaluation-key "},
+        {"Authorization": "Bearer test-evaluation-key"},
+        {"Authorization": "bearer   test-evaluation-key"},
+        {"X-API-Key": "", "Authorization": "Bearer test-evaluation-key"},
+        {"X-API-Key": "stale-key", "Authorization": "Bearer test-evaluation-key"},
+        {"X-API-Key": "test-evaluation-key", "Authorization": "Bearer stale-key"},
+    ]
+    for supplied in accepted:
+        assert client.post("/predict", json=ticket(), headers=supplied).status_code == 200, supplied
+    rejected = [
+        {"X-API-Key": ""},
+        {"Authorization": "Bearer"},
+        {"Authorization": "Basic test-evaluation-key"},
+        {"X-API-Key": "test-evaluation-key-extra"},
+    ]
+    for supplied in rejected:
+        response = client.post("/predict", json=ticket(), headers=supplied)
+        assert response.status_code == 401, supplied
+        assert response.json()["error"]["code"] == "unauthorized"
+
+
+def test_key_is_accepted_under_concurrent_load(client):
+    from concurrent.futures import ThreadPoolExecutor
+
+    def call(index):
+        auth = headers() if index % 2 else {"Authorization": "Bearer test-evaluation-key"}
+        return client.post("/predict", json=ticket("LOAD-{}".format(index)), headers=auth).status_code
+
+    with ThreadPoolExecutor(max_workers=16) as pool:
+        statuses = list(pool.map(call, range(200)))
+    assert statuses == [200] * 200
+
+
 def test_dashboard_uses_server_key_without_returning_it(client):
     status = client.get("/dashboard/status")
     assert status.json() == {"configured": True}
