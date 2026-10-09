@@ -269,9 +269,9 @@ export default function App() {
             className="flex items-center gap-2"
           >
             <FreshMark />
-            <span className="font-black tracking-tight">
-              Fresh Desk
-              <span className="block text-[10px] font-semibold uppercase tracking-widest text-teal-700">
+            <span className="fresh-wordmark">
+              FRESH<b>DESK</b>
+              <span className="block text-[9px] font-semibold uppercase tracking-[.32em] text-teal-700">
                 Support intelligence
               </span>
             </span>
