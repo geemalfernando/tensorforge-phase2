@@ -266,12 +266,12 @@ export default function App() {
               e.preventDefault();
               navigate("home");
             }}
-            className="flex items-center gap-2"
+            className="flex items-center gap-3"
           >
             <FreshMark />
             <span className="fresh-wordmark">
               FRESH<b>DESK</b>
-              <span className="block text-[9px] font-semibold uppercase tracking-[.32em] text-teal-700">
+              <span className="mt-1 block text-[9px] font-bold uppercase tracking-[.34em] text-teal-700">
                 Support intelligence
               </span>
             </span>

@@ -88,18 +88,21 @@ export default function FreshSurface({children,className=''}) {
 }
 
 // Brand mark: an angular "F" cut from slanted bars inside a faceted hexagon.
-export function FreshMark({size=40}) {
+export function FreshMark({size=46}) {
  return <span className="fresh-logo" style={{width:size,height:size}} aria-hidden="true">
   <svg viewBox="0 0 48 48" width="100%" height="100%">
    <defs>
     <linearGradient id="fm-bg" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#123d37"/><stop offset="1" stopColor="#04110f"/></linearGradient>
     <linearGradient id="fm-ink" x1="12" y1="10" x2="34" y2="38" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#ecfccb"/><stop offset=".45" stopColor="#bef264"/><stop offset="1" stopColor="#14b8a6"/></linearGradient>
+    <radialGradient id="fm-glow" cx="24" cy="22" r="22" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#2dd4bf" stopOpacity=".38"/><stop offset="1" stopColor="#2dd4bf" stopOpacity="0"/></radialGradient>
+    <filter id="fm-neon" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
    </defs>
    <rect width="48" height="48" rx="12" fill="url(#fm-bg)"/>
-   <path className="fm-hex" d="M24 5.5l16 9.25v18.5L24 42.5 8 33.25v-18.5z" fill="none" stroke="#5eead4" strokeOpacity=".35" strokeWidth="1.2"/>
-   <path d="M24 5.5l16 9.25L24 24z" fill="#5eead4" fillOpacity=".07"/>
-   <path d="M15 13h18l-3 5H20v3.5h8.5l-3 5H20V36l-5-3z" fill="url(#fm-ink)"/>
-   <path className="fm-spark" d="M35.5 28l1 2.5 2.5 1-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1z" fill="#bef264"/>
+   <rect width="48" height="48" rx="12" fill="url(#fm-glow)"/>
+   <path className="fm-hex" d="M24 5.5l16 9.25v18.5L24 42.5 8 33.25v-18.5z" fill="none" stroke="#5eead4" strokeOpacity=".5" strokeWidth="1.6" strokeLinejoin="round"/>
+   <path d="M24 5.5l16 9.25L24 24z" fill="#5eead4" fillOpacity=".12"/>
+   <path filter="url(#fm-neon)" d="M15 13h18l-3 5H20v3.5h8.5l-3 5H20V36l-5-3z" fill="url(#fm-ink)"/>
+   <path className="fm-spark" filter="url(#fm-neon)" d="M35.5 28l1 2.5 2.5 1-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1z" fill="#bef264"/>
   </svg>
  </span>;
 }
