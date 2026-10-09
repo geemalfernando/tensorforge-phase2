@@ -1,0 +1,10 @@
+$ curl -s $URL/predict -H "X-API-Key: $API_KEY" -H 'Content-Type: application/json' -d '{"channel": "chat",'
+{"error":{"code":"malformed_json","message":"Request body is not valid JSON."}}   → HTTP 400
+$ curl -s $URL/predict ... -d '{"channel":"sms","text":"   "}'
+{"error":{"code":"validation_error","message":"Request failed validation.","details":[{"field":"channel","issue":"must be one of email, chat, call_transcript"},{"field":"text","issue":"must contain at least one non-whitespace character"}]}}   → HTTP 422
+$ curl -s $URL/predict ... -H 'Content-Type: text/plain' -d 'hello'
+{"error":{"code":"unsupported_media_type","message":"Content-Type must be application/json."}}   → HTTP 415
+$ curl -s $URL/predict/batch ... -d '{"tickets":[{"ticket_id":"A",...},{"ticket_id":"A",...}]}'
+{"error":{"code":"validation_error","message":"Request failed validation.","details":[{"field":"ticket_id","issue":"duplicate of an earlier item","index":1}]}}   → HTTP 422
+$ curl -s $URL/no-such-route
+{"error":{"code":"not_found","message":"The requested resource was not found."}}   → HTTP 404

@@ -1,0 +1,56 @@
+services:
+  api:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --proxy-headers
+      - --forwarded-allow-ips
+      - "*"
+    restart: unless-stopped
+    environment:
+      API_KEY: ${API_KEY:?Set API_KEY in deploy/oracle/.env}
+      SUPPORT_PASSWORD: ${SUPPORT_PASSWORD:?Set SUPPORT_PASSWORD in deploy/oracle/.env}
+      DASHBOARD_ORIGINS: ${DASHBOARD_ORIGINS:?Set DASHBOARD_ORIGINS in deploy/oracle/.env}
+      JOB_DB_PATH: /app/data/jobs.sqlite3
+    expose:
+      - "8000"
+    volumes:
+      - ../../data:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      API_HOST: ${API_HOST:?Set API_HOST in deploy/oracle/.env}
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

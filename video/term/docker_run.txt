@@ -1,0 +1,5 @@
+$ docker run -d -p 8111:8000 -e API_KEY=$API_KEY tensorforge-mvp:current
+#   same single command as the brief; host port 8111 only because 8000 is busy on this laptop
+58dc817a4d49
+$ curl -s localhost:8111/health
+{"status":"ok","model_version":"tf-phase2-drive-2.0.0","model_loaded":true}   → HTTP 200

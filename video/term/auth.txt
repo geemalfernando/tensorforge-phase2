@@ -1,0 +1,18 @@
+$ curl -s $URL/health
+{"status":"ok","model_version":"tf-phase2-drive-2.0.0","model_loaded":true}   → HTTP 200
+$ curl -s $URL/predict -H 'Content-Type: application/json' -d '{...}'          # no key
+{"error":{"code":"unauthorized","message":"Missing API key. Send X-API-Key or Authorization Bearer."}}   → HTTP 401
+$ curl -s $URL/predict -H 'X-API-Key: wrong-key' ...                           # wrong key
+{"error":{"code":"unauthorized","message":"Invalid API key."}}   → HTTP 401
+$ curl -s $URL/predict -H "X-API-Key: $API_KEY" -H 'Content-Type: application/json' -d '{"ticket_id":"TF-1048","channel":"chat","text":"mage order eka late, refund ekak denna"}'
+{"category":"delivery_delay",
+  "secondary_category":"payment_refund",
+  "team":"Delivery Operations",
+  "is_urgent":false,
+  "confidence":0.3353121166428199,
+  "model_version":"tf-phase2-drive-2.0.0",
+  "needs_human_review":true,
+  "ticket_id":"TF-1048"}   → HTTP 200
+
+$ curl -s $URL/predict -H "Authorization: Bearer $API_KEY" ... -o /dev/null
+→ HTTP 200

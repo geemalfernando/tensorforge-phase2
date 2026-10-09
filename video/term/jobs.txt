@@ -1,0 +1,21 @@
+$ curl -s -i $URL/batch/jobs -H "X-API-Key: $API_KEY" -H 'Idempotency-Key: eval-run-1' -H 'Content-Type: application/json' --data-binary @job_3000.json
+HTTP/1.1 202 Accepted
+location: /batch/jobs/0a38618b-54cd-47b3-8410-89efffab5f20
+retry-after: 2
+{"job_id":"0a38618b-54cd-47b3-8410-89efffab5f20","status":"queued","total":3000,"processed":0,"created_at":"2026-10-09T09:31:45Z","started_at":null,"finished_at":null,"expires_at":null,"model_version":"tf-phase2-drive-2.0.0","error":null}
+
+$ curl -s $URL/batch/jobs/$JOB/results -H "X-API-Key: $API_KEY"        # too early
+{"error":{"code":"job_not_ready","message":"Job results are available once the job has succeeded."}}   → HTTP 409
+$ curl -s $URL/batch/jobs/$JOB -H "X-API-Key: $API_KEY"
+  "status":"succeeded",
+  "total":3000,
+  "processed":3000,
+  "error":null}   → HTTP 200
+
+$ curl -s '$URL/batch/jobs/$JOB/results?offset=0&limit=2' -H "X-API-Key: $API_KEY"
+{"job_id":"0a38618b-54cd-47b3-8410-89efffab5f20","status":"succeeded","total":3000,"offset":0,"limit":2,"next_offset":2,"model_version":"tf-phase2-drive-2.0.0","predictions":[
+  {"category":"delivery_delay","secondary_category":null,"team":"Delivery Operations","is_urgent":false,"confidence":0.5117395689376276,"model_version":"tf-phase2-drive-2.0.0","needs_human_review":false,"ticket_id":"EVAL-0000"},
+  {"category":"payment_refund","secondary_category":null,"team":"Payments & Refunds","is_urgent":false,"confidence":0.9940603791461324,"model_version":"tf-phase2-drive-2.0.0","needs_human_review":false,"ticket_id":"EVAL-0001"}]}   → HTTP 200
+
+$ curl -s $URL/batch/jobs/unknown-id -H "X-API-Key: $API_KEY"
+{"error":{"code":"job_not_found","message":"No job with this id."}}   → HTTP 404

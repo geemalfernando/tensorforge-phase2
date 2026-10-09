@@ -1,0 +1,16 @@
+$ docker build -t tensorforge-mvp:current .
+  #20 naming to docker.io/library/tensorforge-mvp:current done
+  #20 DONE 0.1s
+
+$ docker run -d --name tf-video --network none -e API_KEY=$API_KEY tensorforge-mvp:current      # no network at all
+f994ee3f27b5
+  (healthy after 2.0s)
+
+$ docker exec tf-video python -c "...GET /health"
+{"status":"ok","model_version":"tf-phase2-drive-2.0.0","model_loaded":true}
+
+$ docker exec tf-video python -c "...POST /predict  (Sinhala text, X-API-Key)"
+{"category":"lost_item","secondary_category":null,"team":"Lost & Found","is_urgent":false,"confidence":0.999808180522048,"model_version":"tf-phase2-drive-2.0.0","needs_human_review":false,"ticket_id":"SI-1"}
+
+$ docker exec tf-video python -c "...urlopen(https://pypi.org)"      # prove there is no internet
+no internet: URLError <urlopen error [Errno -3] Temporary failure in name resolution>

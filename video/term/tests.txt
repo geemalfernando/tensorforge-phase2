@@ -1,0 +1,23 @@
+$ pytest -q
+.......................................                                  [100%]
+39 passed in 43.49s
+
+$ python scripts/evaluate_model.py      # 800 validation predictions vs official JSON Schemas
+  official_schema_valid_predictions: 800 / 800
+
+$ npx newman run postman/TensorForge.postman_collection.json -e postman/TensorForge-Local.postman_environment.json
+┌─────────────────────────┬──────────────────┬─────────────────┐
+│                         │         executed │          failed │
+├─────────────────────────┼──────────────────┼─────────────────┤
+│              iterations │                1 │               0 │
+├─────────────────────────┼──────────────────┼─────────────────┤
+│                requests │               35 │               0 │
+├─────────────────────────┼──────────────────┼─────────────────┤
+│            test-scripts │               70 │               0 │
+├─────────────────────────┼──────────────────┼─────────────────┤
+│      prerequest-scripts │                4 │               0 │
+├─────────────────────────┼──────────────────┼─────────────────┤
+│              assertions │             2773 │               0 │
+├─────────────────────────┴──────────────────┴─────────────────┤
+│ total run duration: 3s                                       │
+└──────────────────────────────────────────────────────────────┘
