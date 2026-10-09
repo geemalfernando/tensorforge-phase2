@@ -2,7 +2,27 @@
 
 A multilingual RideEat support-ticket classifier, API, and React dashboard adapted from your ResolveX system. Ticket intake, live operations, support review, batch inference, and a model lab share the same trained backend. The classifier is a locally trained TF-IDF models (logistic regression and a calibrated linear SVM); predictions do not call an LLM or any external service.
 
-## Start the API and dashboard
+## Start the full app with one command
+
+Install Docker Desktop (macOS/Windows) or Docker Engine with Compose (Linux), then run this from the repository root:
+
+```bash
+docker compose up --build -d
+```
+
+This starts the dashboard and API together with a persistent PostgreSQL database. Open <http://localhost:8000>; check readiness at <http://localhost:8000/health>. The first build can take a few minutes. Stop the app with `docker compose down`; database records remain in the Compose volume. `docker compose down -v` also deletes the stored database.
+
+Compose uses development-only defaults for `API_KEY` and `SUPPORT_PASSWORD`; its local Postgres credentials are `tensorforge` / `tensorforge-local-dev`. Override the API key and support password before starting if needed:
+
+```bash
+API_KEY='your-local-key' SUPPORT_PASSWORD='your-local-support-password' docker compose up --build -d
+```
+
+For a local-only demo, the API key is `local-development-key` and support login password is `local-support-password`. Never expose this development stack to the public internet with default credentials. The Postgres service is only published on `127.0.0.1:5432`.
+
+The batch workbench can seed sample tickets into the database: open **Batch workbench**, choose **Load sample**, then **Run batch**. These synthetic demo records persist across app restarts.
+
+## Manual local setup (without Docker)
 
 Python 3.10+ is supported locally; Vercel runs Python 3.12. Install dependencies, train the bundled workshop data, then start the service:
 
@@ -23,16 +43,15 @@ Open <http://localhost:8000> for the dashboard or <http://localhost:8000/docs> f
 
 The organizer’s supplied OpenAPI v2.1.0 contract is saved in `tensorforge-phase2-openapi-v2.yaml`. `/openapi.json` and `/docs` use the matching `app/openapi.json`, which is bundled in the container. The API specification version is independent of the trained model version.
 
-## Docker
+## Docker images for macOS and other platforms
 
-The image contains the trained model artifact, so no training data, network access, or model download is needed at runtime.
+Every push to `main` publishes `ghcr.io/geemalfernando/tensorforge-phase2:latest`; version tags publish matching version tags. GitHub Actions builds `linux/amd64` and `linux/arm64` images, so Docker Desktop selects the compatible image for Intel and Apple Silicon Macs. The image includes the trained model artifact; no training data or model download is needed at runtime.
 
 ```bash
-docker build -t tensorforge-mvp .
-docker run -p 8000:8000 -e API_KEY='<your-team-key>' tensorforge-mvp
+docker pull ghcr.io/geemalfernando/tensorforge-phase2:latest
 ```
 
-`/health` works without a key. Provide the evaluation key to Docker through `-e API_KEY=...`; do not copy it into the image or commit it to the repository. Without `DATABASE_URL`, the SQLite job database is stored at `/app/data/jobs.sqlite3`; mount a persistent volume at `/app/data` if batch jobs need to survive container replacement. For hosted PostgreSQL, set `DATABASE_URL` and use the Supabase transaction pooler. Run one API process per SQLite job store.
+The published app container serves the frontend and API together. For a full local stack including its own persistent Postgres database, use the Compose command above. To use an external database, configure `DATABASE_URL` with a PostgreSQL connection string. Keep API keys and database credentials out of source control.
 
 ## API
 
@@ -51,7 +70,7 @@ docker run -p 8000:8000 -e API_KEY='<your-team-key>' tensorforge-mvp
 
 The ResolveX-style workspace has five views: Ticket intake, Live operations, Support queue, Batch workbench, and Model lab. Intake supports chat, email subject/body, and call transcripts. Predictions enter the current browser session queue. Urgent and low-confidence tickets enter support review; an agent can confirm the team or record a routing override with a reason. Review decisions are session demo state, reset on refresh, and leave canonical model predictions unchanged.
 
-The batch workbench loads JSON, processes 1–100 tickets synchronously or 101–5,000 asynchronously, polls progress, supports cancellation, and downloads all results. Its preview shows up to 100 rows. The model lab reads actual loaded classifier classes and saved validation metrics from the server.
+The batch workbench accepts JSON so a dataset can be pasted or uploaded as one portable, predictable payload with a unique `ticket_id`, `channel`, and `text` for each ticket (with optional `subject` or `language`). The API validates the batch, preserves input order, and returns matching predictions. It processes 1–100 tickets synchronously or 101–5,000 asynchronously, polls progress, supports cancellation, and downloads all results. Its preview shows up to 100 rows. The model lab reads actual loaded classifier classes and saved validation metrics from the server.
 
 The dashboard is responsive down to 320px: workspace navigation scrolls horizontally on touch screens, and primary actions keep touch-friendly targets. The main views were checked at 320, 360, 390, 430, 768, and 1024px.
 

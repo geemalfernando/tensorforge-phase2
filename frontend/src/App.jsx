@@ -611,8 +611,13 @@ export default function App() {
                 </label>
               </div>
               <p className="my-4 text-sm text-slate-500">
-                1–100 tickets run synchronously. 101–5,000 run as a background
-                job. Every ticket requires a unique ticket_id.
+                JSON gives bulk imports a portable, predictable structure:
+                each ticket has a unique ticket_id, channel, and text, with
+                optional subject or language. The API validates the whole
+                batch and keeps results in input order. Paste a{" "}
+                <code className="rounded bg-slate-100 px-1">{"{\"tickets\": [...]}"}</code>{" "}
+                payload or load a .json file. 1–100 tickets run synchronously;
+                101–5,000 run as a background job.
               </p>
               <textarea
                 aria-label="Batch request JSON"
