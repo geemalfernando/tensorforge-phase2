@@ -157,7 +157,7 @@ python scripts/train_model.py
 python scripts/compare_training.py --target category
 ```
 
-`scripts/train_model.py` makes a deterministic, category-stratified 75/25 split of `datasets/train.csv` (3,000 fit / 1,000 test examples), reports the untouched test-fold scores, then refits the deployable artifact on all 4,800 labeled tickets. It writes the split metadata and scores to `artifacts/evaluation_metrics.json` and `artifacts/evaluation_breakdown.json`. The executed notebooks [retrain_75_25.ipynb](notebooks/retrain_75_25.ipynb) and [final_model_release.ipynb](notebooks/final_model_release.ipynb) include the evaluation, model rationale, per-class/per-language diagnostics, visual confusion matrices, and delivery-delay/lost-property checks. `configs/training.json` freezes the selected configuration and thresholds.
+`scripts/train_model.py` makes a deterministic, category-stratified 75/25 split of `datasets/train.csv` (3,000 fit / 1,000 test examples), reports the untouched test-fold scores, then refits the deployable artifact on all 4,800 labeled tickets. It writes the split metadata and scores to `artifacts/evaluation_metrics.json` and `artifacts/evaluation_breakdown.json`. The executed [model report notebook](notebooks/tensorforge_model_report.ipynb) and its [PDF export](docs/tensorforge-model-report.pdf) include the evaluation, model rationale, per-class/per-language diagnostics, visual confusion matrices, and delivery-delay/lost-property checks. `configs/training.json` freezes the selected configuration and thresholds.
 
 Regenerate the README figures from those saved metrics with `python scripts/export_release_visuals.py`.
 
@@ -183,7 +183,7 @@ On the held-out fold, **150/150** delivery-delay tickets were routed correctly, 
 
 ![Full primary-category confusion matrix](docs/model-release-v2.1.0/category-confusion.png)
 
-The complete [final model release notebook](notebooks/final_model_release.ipynb) documents all class-level precision, recall, F1, support, confusion matrices, model rationale, and limitations. These scores measure synthetic workshop examples only; they do not guarantee performance on real customer messages or judge-provided tickets.
+The [model report notebook](notebooks/tensorforge_model_report.ipynb) (also exported as [docs/tensorforge-model-report.pdf](docs/tensorforge-model-report.pdf)) documents all class-level precision, recall, F1, support, confusion matrices, model rationale, and limitations. These scores measure synthetic workshop examples only; they do not guarantee performance on real customer messages or judge-provided tickets.
 
 Primary confidence below 0.5 or a message with three or fewer words recommends human review. Ambiguous messages such as `badu nati una` still require clarification about whether personal belongings or food-order contents are missing. Review decisions never alter the raw API prediction. Primary confidence has not been independently calibrated.
 

@@ -16,7 +16,7 @@ In the test fold, all 150 delivery-delay tickets were classified correctly; none
 
 The executed notebook contains the per-class precision/recall/F1 table, full category confusion matrix, per-language macro-F1 chart, delivery-delay/lost-property comparison, and the smoke checks:
 
-- [Executed 75/25 training and evaluation notebook](../notebooks/retrain_75_25.ipynb)
+- [Model report notebook](../notebooks/tensorforge_model_report.ipynb) and its [PDF export](tensorforge-model-report.pdf)
 - Metrics JSON: `../artifacts/evaluation_metrics.json`
 - Confusion and breakdown JSON: `../artifacts/evaluation_breakdown.json`
 
