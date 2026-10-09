@@ -10,9 +10,9 @@ const NAV = [
   ["intake", "＋", "Ticket intake"],
   ["ops", "◈", "Live operations"],
   ["support", "◇", "Support queue"],
+  ["demo", "⚖", "Judge demo"],
   ["batch", "▤", "Batch workbench"],
   ["models", "⌁", "Model lab"],
-  ["demo", "⚖", "Judge demo"],
 ];
 const PAGE_COPY = {
   intake: ["Ticket intake", "Every ticket. The right team.", "From customer message to a clear route. Three locally trained models identify the issue, the second concern, and the need for urgent attention."],
