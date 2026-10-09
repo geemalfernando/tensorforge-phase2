@@ -67,9 +67,48 @@ def test_dashboard_reports_three_real_models_without_secrets(client):
     value = result.json()
     assert [item["id"] for item in value["models"]] == ["category", "secondary_category", "is_urgent"]
     assert all(item["loaded"] for item in value["models"])
-    assert value["training_examples"] == 4000
+    assert value["training_examples"] == 4800
     assert len(value["routes"]) == 11
     assert "test-evaluation-key" not in result.text
+
+
+def test_retrained_model_separates_delayed_delivery_from_lost_property(client):
+    delayed = client.post(
+        "/predict",
+        headers=headers(),
+        json={**ticket(text="My food order is delayed and still has not arrived."), "language": "en"},
+    )
+    lost = client.post(
+        "/predict",
+        headers=headers(),
+        json=ticket(text="I left my phone in the car after my ride."),
+    )
+    assert delayed.status_code == 200
+    assert delayed.json()["category"] == "delivery_delay"
+    assert lost.status_code == 200
+    assert lost.json()["category"] == "lost_item"
+
+
+def test_language_hint_is_optional_but_must_be_a_short_string(client):
+    with_hint = client.post(
+        "/predict",
+        headers=headers(),
+        json={**ticket(text="My food order is delayed."), "language": "en"},
+    )
+    without_hint = client.post(
+        "/predict",
+        headers=headers(),
+        json=ticket(text="My food order is delayed."),
+    )
+    invalid_hint = client.post(
+        "/predict",
+        headers=headers(),
+        json={**ticket(text="My food order is delayed."), "language": 42},
+    )
+    assert with_hint.status_code == 200
+    assert without_hint.status_code == 200
+    assert invalid_hint.status_code == 422
+    assert invalid_hint.json()["error"]["details"][0]["field"] == "language"
 
 
 def test_auth_happens_before_content_type_and_json_validation(client):

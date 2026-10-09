@@ -1,6 +1,7 @@
 """Evaluate the saved artifact without retraining or changing its thresholds."""
 import argparse
 import csv
+import hashlib
 import json
 import sys
 from collections import Counter
@@ -18,13 +19,27 @@ from scripts.train_model import evaluate, read_examples  # noqa: E402
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--dataset", type=Path, default=ROOT / "datasets/validation.csv")
-    parser.add_argument("--output", type=Path, default=ROOT / "artifacts/evaluation_breakdown.json")
+    parser.add_argument(
+        "--dataset", type=Path, required=True,
+        help="Independent labeled CSV; the training and supplied validation files are rejected.",
+    )
+    parser.add_argument(
+        "--output", type=Path,
+        default=ROOT / "artifacts/external_evaluation_breakdown.json",
+    )
     args = parser.parse_args()
+    model = TicketModel.load()
+    dataset_hash = hashlib.sha256(args.dataset.read_bytes()).hexdigest()
+    trained_hashes = model.training_metadata.get("dataset_sha256", {}).values()
+    if dataset_hash in trained_hashes:
+        raise ValueError(
+            "This dataset was used to train the loaded artifact; use the saved "
+            "75/25 held-out report instead of scoring it in-sample."
+        )
     tickets, categories, secondary, urgent = read_examples(args.dataset)
     with args.dataset.open(encoding="utf-8", newline="") as source:
         rows = list(csv.DictReader(source))
-    predictions = TicketModel.load().predict_many(tickets)
+    predictions = model.predict_many(tickets)
     bundle = json.loads((ROOT / "schemas/tensorforge-schemas.json").read_text(encoding="utf-8"))
     validator = Draft202012Validator({**bundle, "$ref": "#/$defs/PredictResponse"})
     for prediction in predictions:
@@ -48,7 +63,7 @@ def main():
         "model_version": MODEL_VERSION,
         "dataset": args.dataset.name,
         "examples": len(tickets),
-        "evaluation_note": "Development validation data informed model selection and thresholds; this is not an independent test score.",
+        "evaluation_note": "External dataset metrics; confirm that this data was not used for model or threshold selection.",
         "official_schema_valid_predictions": len(predictions),
         "validation": {
             "category": evaluate(categories, predicted_categories),

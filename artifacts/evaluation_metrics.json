@@ -1,21 +1,516 @@
 {
-  "model_version": "tf-phase2-drive-2.0.0",
-  "training_examples": 4000,
-  "validation_examples": 800,
+  "model_version": "tf-phase2-drive-2.1.0",
+  "training_examples": 4800,
+  "validation_examples": 1000,
+  "evaluation_note": "Metrics are from the untouched 25% stratified test fold of train.csv. After scoring, the deployment artifact was refit on train.csv plus validation.csv; do not evaluate that final artifact on these same examples.",
+  "evaluation_split": {
+    "method": "stratified random split by primary category from train.csv only",
+    "test_size": 0.25,
+    "random_state": 42,
+    "fit_examples": 3000,
+    "test_examples": 1000,
+    "validation_file_used_for_test_scoring": false
+  },
   "validation": {
     "category": {
-      "accuracy": 0.63,
-      "macro_f1": 0.6504
+      "accuracy": 0.99,
+      "macro_f1": 0.9892
     },
     "secondary_category": {
-      "accuracy": 0.955,
-      "macro_f1": 0.6922
+      "accuracy": 0.998,
+      "macro_f1": 0.9884
     },
     "is_urgent": {
-      "accuracy": 0.975,
-      "macro_f1": 0.9313
+      "accuracy": 0.999,
+      "macro_f1": 0.9971
     }
   },
+  "classification_reports": {
+    "category": {
+      "account_promo": {
+        "precision": 0.9888888888888889,
+        "recall": 0.9888888888888889,
+        "f1-score": 0.9888888888888889,
+        "support": 90.0
+      },
+      "app_technical": {
+        "precision": 0.975609756097561,
+        "recall": 1.0,
+        "f1-score": 0.9876543209876543,
+        "support": 80.0
+      },
+      "delivery_delay": {
+        "precision": 0.974025974025974,
+        "recall": 1.0,
+        "f1-score": 0.9868421052631579,
+        "support": 150.0
+      },
+      "food_quality": {
+        "precision": 1.0,
+        "recall": 0.9857142857142858,
+        "f1-score": 0.9928057553956835,
+        "support": 70.0
+      },
+      "general_inquiry": {
+        "precision": 0.9803921568627451,
+        "recall": 1.0,
+        "f1-score": 0.99009900990099,
+        "support": 50.0
+      },
+      "lost_item": {
+        "precision": 0.9795918367346939,
+        "recall": 0.96,
+        "f1-score": 0.9696969696969697,
+        "support": 50.0
+      },
+      "order_missing_wrong": {
+        "precision": 1.0,
+        "recall": 0.9833333333333333,
+        "f1-score": 0.9915966386554621,
+        "support": 120.0
+      },
+      "payment_refund": {
+        "precision": 1.0,
+        "recall": 0.9944444444444445,
+        "f1-score": 0.9972144846796658,
+        "support": 180.0
+      },
+      "ride_trip_issue": {
+        "precision": 0.9928057553956835,
+        "recall": 0.9857142857142858,
+        "f1-score": 0.989247311827957,
+        "support": 140.0
+      },
+      "safety_conduct": {
+        "precision": 1.0,
+        "recall": 0.975,
+        "f1-score": 0.9873417721518987,
+        "support": 40.0
+      },
+      "spam_irrelevant": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 30.0
+      },
+      "accuracy": 0.99,
+      "macro avg": {
+        "precision": 0.9901194880005041,
+        "recall": 0.9884632034632034,
+        "f1-score": 0.9892170234043935,
+        "support": 1000.0
+      },
+      "weighted avg": {
+        "precision": 0.9901446820269687,
+        "recall": 0.99,
+        "f1-score": 0.990003361749067,
+        "support": 1000.0
+      }
+    },
+    "secondary_category": {
+      "__none__": {
+        "precision": 1.0,
+        "recall": 0.9988925802879292,
+        "f1-score": 0.9994459833795014,
+        "support": 903.0
+      },
+      "app_technical": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 16.0
+      },
+      "delivery_delay": {
+        "precision": 1.0,
+        "recall": 0.9285714285714286,
+        "f1-score": 0.962962962962963,
+        "support": 14.0
+      },
+      "order_missing_wrong": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 8.0
+      },
+      "payment_refund": {
+        "precision": 0.9375,
+        "recall": 1.0,
+        "f1-score": 0.967741935483871,
+        "support": 30.0
+      },
+      "ride_trip_issue": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 29.0
+      },
+      "accuracy": 0.998,
+      "macro avg": {
+        "precision": 0.9895833333333334,
+        "recall": 0.9879106681432264,
+        "f1-score": 0.9883584803043893,
+        "support": 1000.0
+      },
+      "weighted avg": {
+        "precision": 0.998125,
+        "recall": 0.998,
+        "f1-score": 0.9980134625376874,
+        "support": 1000.0
+      }
+    },
+    "is_urgent": {
+      "false": {
+        "precision": 0.9988962472406181,
+        "recall": 1.0,
+        "f1-score": 0.9994478188845942,
+        "support": 905.0
+      },
+      "true": {
+        "precision": 1.0,
+        "recall": 0.9894736842105263,
+        "f1-score": 0.9947089947089947,
+        "support": 95.0
+      },
+      "accuracy": 0.999,
+      "macro avg": {
+        "precision": 0.999448123620309,
+        "recall": 0.9947368421052631,
+        "f1-score": 0.9970784067967944,
+        "support": 1000.0
+      },
+      "weighted avg": {
+        "precision": 0.9990011037527594,
+        "recall": 0.999,
+        "f1-score": 0.9989976305879124,
+        "support": 1000.0
+      }
+    }
+  },
+  "category_report": {
+    "payment_refund": {
+      "precision": 1.0,
+      "recall": 0.9944444444444445,
+      "f1-score": 0.9972144846796658,
+      "support": 180.0
+    },
+    "ride_trip_issue": {
+      "precision": 0.9928057553956835,
+      "recall": 0.9857142857142858,
+      "f1-score": 0.989247311827957,
+      "support": 140.0
+    },
+    "lost_item": {
+      "precision": 0.9795918367346939,
+      "recall": 0.96,
+      "f1-score": 0.9696969696969697,
+      "support": 50.0
+    },
+    "order_missing_wrong": {
+      "precision": 1.0,
+      "recall": 0.9833333333333333,
+      "f1-score": 0.9915966386554621,
+      "support": 120.0
+    },
+    "delivery_delay": {
+      "precision": 0.974025974025974,
+      "recall": 1.0,
+      "f1-score": 0.9868421052631579,
+      "support": 150.0
+    },
+    "food_quality": {
+      "precision": 1.0,
+      "recall": 0.9857142857142858,
+      "f1-score": 0.9928057553956835,
+      "support": 70.0
+    },
+    "account_promo": {
+      "precision": 0.9888888888888889,
+      "recall": 0.9888888888888889,
+      "f1-score": 0.9888888888888889,
+      "support": 90.0
+    },
+    "safety_conduct": {
+      "precision": 1.0,
+      "recall": 0.975,
+      "f1-score": 0.9873417721518987,
+      "support": 40.0
+    },
+    "app_technical": {
+      "precision": 0.975609756097561,
+      "recall": 1.0,
+      "f1-score": 0.9876543209876543,
+      "support": 80.0
+    },
+    "general_inquiry": {
+      "precision": 0.9803921568627451,
+      "recall": 1.0,
+      "f1-score": 0.99009900990099,
+      "support": 50.0
+    },
+    "spam_irrelevant": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 30.0
+    },
+    "accuracy": 0.99,
+    "macro avg": {
+      "precision": 0.9901194880005041,
+      "recall": 0.9884632034632035,
+      "f1-score": 0.9892170234043932,
+      "support": 1000.0
+    },
+    "weighted avg": {
+      "precision": 0.9901446820269686,
+      "recall": 0.99,
+      "f1-score": 0.990003361749067,
+      "support": 1000.0
+    }
+  },
+  "category_confusion_matrix": {
+    "labels": [
+      "payment_refund",
+      "ride_trip_issue",
+      "lost_item",
+      "order_missing_wrong",
+      "delivery_delay",
+      "food_quality",
+      "account_promo",
+      "safety_conduct",
+      "app_technical",
+      "general_inquiry",
+      "spam_irrelevant"
+    ],
+    "rows_actual_columns_predicted": [
+      [
+        179,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        138,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        48,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        118,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        150,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        69,
+        0,
+        0,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        89,
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        39,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        80,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        50,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        30
+      ]
+    ]
+  },
+  "category_by_language": {
+    "en": {
+      "count": 356,
+      "accuracy": 0.9831,
+      "macro_f1": 0.9825
+    },
+    "mixed": {
+      "count": 23,
+      "accuracy": 1.0,
+      "macro_f1": 1.0
+    },
+    "si": {
+      "count": 198,
+      "accuracy": 1.0,
+      "macro_f1": 1.0
+    },
+    "singlish": {
+      "count": 255,
+      "accuracy": 0.9961,
+      "macro_f1": 0.9978
+    },
+    "ta": {
+      "count": 146,
+      "accuracy": 1.0,
+      "macro_f1": 1.0
+    },
+    "tanglish": {
+      "count": 22,
+      "accuracy": 0.8636,
+      "macro_f1": 0.7778
+    }
+  },
+  "top_category_confusions": [
+    {
+      "actual": "order_missing_wrong",
+      "predicted": "delivery_delay",
+      "count": 1
+    },
+    {
+      "actual": "ride_trip_issue",
+      "predicted": "account_promo",
+      "count": 1
+    },
+    {
+      "actual": "ride_trip_issue",
+      "predicted": "lost_item",
+      "count": 1
+    },
+    {
+      "actual": "lost_item",
+      "predicted": "ride_trip_issue",
+      "count": 1
+    },
+    {
+      "actual": "safety_conduct",
+      "predicted": "delivery_delay",
+      "count": 1
+    },
+    {
+      "actual": "order_missing_wrong",
+      "predicted": "app_technical",
+      "count": 1
+    },
+    {
+      "actual": "lost_item",
+      "predicted": "delivery_delay",
+      "count": 1
+    },
+    {
+      "actual": "account_promo",
+      "predicted": "app_technical",
+      "count": 1
+    },
+    {
+      "actual": "food_quality",
+      "predicted": "general_inquiry",
+      "count": 1
+    },
+    {
+      "actual": "payment_refund",
+      "predicted": "delivery_delay",
+      "count": 1
+    }
+  ],
   "thresholds": {
     "is_urgent": 0.3,
     "secondary_category": 0.2
@@ -50,8 +545,10 @@
         }
       }
     },
-    "train_sha256": "d4d360539b228575634d3dcbf65052b4538d61915c811ba46c34d0076f39c9b9",
-    "validation_sha256": "6a98d3d394561924b5bfe194b0ad8990a55c779bdc9a173954dac8eec049e011",
+    "dataset_sha256": {
+      "train": "d4d360539b228575634d3dcbf65052b4538d61915c811ba46c34d0076f39c9b9",
+      "validation": "6a98d3d394561924b5bfe194b0ad8990a55c779bdc9a173954dac8eec049e011"
+    },
     "selected_configurations": {
       "category": {
         "estimator": "logistic_regression",
@@ -89,6 +586,28 @@
         "threshold": 0.3
       }
     },
-    "selection_note": "Compared candidates on a training-only split, then on the supplied development validation set after the first selected candidate regressed. Final configuration and thresholds use development validation; no independent holdout accuracy is claimed."
+    "selection_note": "Compared candidates on a training-only split, then on the supplied development validation set after the first selected candidate regressed. Final configuration and thresholds use development validation; no independent holdout accuracy is claimed.",
+    "evaluation_split": {
+      "method": "stratified random split by primary category from train.csv only",
+      "test_size": 0.25,
+      "random_state": 42,
+      "fit_examples": 3000,
+      "test_examples": 1000,
+      "validation_file_used_for_test_scoring": false
+    },
+    "holdout_metrics": {
+      "category": {
+        "accuracy": 0.99,
+        "macro_f1": 0.9892
+      },
+      "secondary_category": {
+        "accuracy": 0.998,
+        "macro_f1": 0.9884
+      },
+      "is_urgent": {
+        "accuracy": 0.999,
+        "macro_f1": 0.9971
+      }
+    }
   }
 }

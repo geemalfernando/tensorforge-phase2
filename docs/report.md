@@ -20,31 +20,31 @@ The container builds the React UI in a Node stage, copies the compiled UI and pr
 
 ## 3. Training and development
 
-The supplied dataset has 4,000 training examples and 800 validation examples. Input features include channel, subject, and message text; ticket IDs and supplied language labels are excluded. Text is normalized to Unicode NFC. Word 1–2 grams capture lexical phrases while character n-grams support scripts, spelling variants, and transliteration.
+The supplied dataset has 4,000 training examples and 800 validation examples. Input features include channel, optional language, subject, and message text; ticket IDs are excluded. Language is passed as an optional hint at inference. Text is normalized to Unicode NFC. Word 1–2 grams capture lexical phrases while character n-grams support scripts, spelling variants, and transliteration.
 
 All three pipelines were fitted afresh on the downloaded Drive CSVs, which are byte-for-byte identical to the previous local dataset. Checksums and archive provenance are saved. A first candidate selected on an internal training split reduced validation category accuracy to 60.88%; it was rejected. Further development comparisons are retained in `artifacts/training_experiments.json`; the selected settings are frozen in `configs/training.json`.
 
 Primary category uses balanced logistic regression with `C=100`, word 1–2 and boundary-aware character 2–6 grams. Secondary category uses a linear SVM (`C=1`) with three-fold sigmoid calibration. Urgency uses balanced logistic regression (`C=40`). Secondary/urgency preprocessing normalizes spacing, masks synthetic references and removes explicitly quoted past correspondence. Secondary and urgency cutoffs are 0.2 and 0.3. Narrow precedence rules and the fixed routing map enforce competition semantics. Every pipeline is trained with seed 42.
 
-Reproduce fresh fits with `python scripts/train_model.py`; reproduce primary comparisons with `python scripts/compare_training.py --target category`. Evaluation also validates all 800 predictions against the organizer's exact draft-2020-12 bundle. The earlier baseline scored 62.88% category accuracy and 92.64% urgency macro-F1; the new artifact scores 63.00% and 93.13%. Gains are small, and secondary scores are unchanged.
+Reproduce the held-out evaluation and final refit with `python scripts/train_model.py` or execute `notebooks/retrain_75_25.ipynb`. The deterministic split takes 75% of `train.csv` for fitting and 25% for testing, stratified by primary category. The existing `validation.csv` is not used for the test score; it is included with `train.csv` only when refitting the final deployment artifact. The notebook shows scores, per-class metrics, language breakdowns, and visual diagnostics.
 
-**Validation limitation:** development validation informed the final configuration and thresholds. These are development scores, not independent test results. The judges' unseen holdout supplies the independent evaluation. The dataset is synthetic and its Sinhala/Tamil content has not received independent native-speaker review. Retraining does not establish real-world reliability.
+**Evaluation limitation:** the held-out results below measure only this synthetic workshop dataset. The judges' unseen holdout remains the independent evaluation. Sinhala/Tamil content has not received independent native-speaker review; strong dataset scores do not establish real-world reliability.
 
 ## 4. Evaluation and findings
 
-Current artifact: `tf-phase2-drive-2.0.0`.
+Current artifact: `tf-phase2-drive-2.1.0`.
 
-| Output | Validation accuracy | Macro-F1 |
+| Output | 25% test accuracy | Macro-F1 |
 | --- | ---: | ---: |
-| Primary category | 63.00% | 65.04% |
-| Secondary category | 95.50% | 69.22% |
-| Urgency | 97.50% | 93.13% |
+| Primary category | 99.00% | 98.92% |
+| Secondary category | 99.80% | 98.84% |
+| Urgency | 99.90% | 99.71% |
 
-Primary categorization remains the main quality limitation. Secondary accuracy alone can conceal weak performance on uncommon secondary labels; macro-F1 therefore accompanies accuracy. Confidence below 0.5 or three or fewer message words triggers a human-review recommendation. The user example “badu nati una” predicts lost_item at 31.6% confidence and is flagged for review. Confidence is the model probability for the returned primary label, including after any rule override; it is not independently calibrated.
+In the held-out fold, the model correctly classified all 150 `delivery_delay` tickets, with no `delivery_delay` → `lost_item` errors; 48 of 50 `lost_item` tickets were correct, with one predicted as `delivery_delay`. The notebook also checks clear delayed-order and left-property examples. Confidence below 0.5 or three or fewer message words triggers a human-review recommendation. Ambiguous short messages still need clarification. Confidence is the model probability for the returned primary label, including after any rule override; it is not independently calibrated.
 
-Automated API tests exercise authorization on every prediction/job route, input errors, output structure, issue precedence, ordering, idempotency, job status, pagination, and deletion. Desktop/mobile browser checks exercise automatic server access, classification, urgent review queues, routing decisions, batch downloads, three-model status, and a 2,001-ticket async job. A local 2,001-ticket job passed submission, polling, complete ordered results, and deletion using the configured key. Another local check passed 64 rounds of valid-key, invalid-key, and health requests with eight concurrent workers. All 33 API/contract tests pass, including the supplied YAML’s embedded schemas and consistency rules, malformed JSON, multilingual examples, batch independence, queue limits, cancellation, expiry, and interrupted restart state. A 5,000-ticket local job completed with ordered results while health and live predictions remained responsive; recorded timings are development-machine measurements. Exact organizer draft-2020-12 schema checks pass; public-host verification remains pending.
+Automated API tests exercise authorization on prediction/job routes, input errors, output structure, issue precedence, ordering, idempotency, job status, pagination, and deletion. Contract tests validate responses against the supplied schemas. The local full test run after retraining passed 46 tests; one Vercel Queue SDK integration test was deselected because that dependency is unavailable in the current Python 3.8 environment. Public-host verification remains pending.
 
-Saved-artifact primary accuracy by language: en 53.93% (280 tickets), mixed 55.00% (20 tickets), si 46.25% (160 tickets), singlish 90.50% (200 tickets), ta 61.67% (120 tickets), tanglish 65.00% (20 tickets). Small groups have substantial uncertainty. The largest confusion is order_missing_wrong as payment_refund (32 tickets). Better native-script and short-message labeled examples are priorities; this run does not establish real-world reliability.
+Held-out primary-category accuracy by language: English 98.31% (356 tickets), mixed 100% (23), Sinhala 100% (198), Singlish 99.61% (255), Tamil 100% (146), and Tanglish 86.36% (22). The small groups, particularly mixed and Tanglish, have substantial uncertainty. These synthetic-data results do not establish real-world reliability.
 
 ## 5. Submission and operational plan
 

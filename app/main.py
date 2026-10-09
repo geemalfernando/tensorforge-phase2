@@ -288,6 +288,12 @@ def _validate_ticket(ticket: Any, require_id: bool = False) -> List[Dict[str, st
     elif len(subject) > 500:
         details.append({"field": "subject", "issue": "must be at most 500 characters"})
 
+    language = ticket.get("language", "")
+    if not isinstance(language, str):
+        details.append({"field": "language", "issue": "must be a string"})
+    elif len(language) > 32:
+        details.append({"field": "language", "issue": "must be at most 32 characters"})
+
     text = ticket.get("text")
     if not isinstance(text, str):
         details.append({"field": "text", "issue": "is required and must be a string"})

@@ -11,7 +11,7 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.svm import LinearSVC
 from app.preprocessing import normalize_ticket_text
 
-MODEL_VERSION = "tf-phase2-drive-2.0.0"
+MODEL_VERSION = "tf-phase2-drive-2.1.0"
 MODEL_PATH = Path(__file__).resolve().parent.parent / "artifacts" / "model.joblib"
 URGENT_THRESHOLD = 0.2
 SECONDARY_THRESHOLD = 0.1
@@ -33,9 +33,10 @@ TEAM_BY_CATEGORY = {
 
 def compose_text(ticket: Dict[str, Any]) -> str:
     channel = ticket.get("channel", "")
+    language = ticket.get("language", "")
     subject = ticket.get("subject", "")
     text = ticket.get("text", "")
-    combined = "{}\n{}\n{}".format(channel, subject, text)
+    combined = "{} language {}\n{}\n{}".format(channel, language, subject, text)
     return unicodedata.normalize("NFC", combined)
 
 
