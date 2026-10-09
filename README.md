@@ -2,6 +2,42 @@
 
 A multilingual RideEat support-ticket classifier, API, and React dashboard adapted from your ResolveX system. Ticket intake, live operations, support review, batch inference, and a model lab share the same trained backend. The classifier is a locally trained TF-IDF models (logistic regression and a calibrated linear SVM); predictions do not call an LLM or any external service.
 
+## Live demo and evaluation API
+
+- **Live dashboard:** [https://tensorforge-phase2.vercel.app/](https://tensorforge-phase2.vercel.app/)
+- **Authenticated batch inference:** `POST https://tensorforge-phase2.vercel.app/predict/batch`
+- **API specification:** [OpenAPI 2.1.0 JSON](https://tensorforge-phase2.vercel.app/openapi.json) · [interactive API docs](https://tensorforge-phase2.vercel.app/docs)
+
+Batch inference requires the organizer-issued key in `X-API-Key` or `Authorization: Bearer <team-key>`. It accepts 1–100 tickets and returns HTTP `200`; missing or invalid credentials return HTTP `401` in the specified JSON error format. Send the contract-shaped body:
+
+```json
+{
+  "tickets": [
+    {
+      "ticket_id": "TF-1048",
+      "channel": "chat",
+      "text": "My food order is late and has not arrived."
+    }
+  ]
+}
+```
+
+## Run the evaluation container
+
+Build the image once from the repository:
+
+```bash
+docker build -t tensorforge-mvp .
+```
+
+Then start the frontend, API, model, and local SQLite database in a single container with the required command:
+
+```bash
+docker run --rm -p 8000:8000 -e API_KEY='<your-team-key>' tensorforge-mvp
+```
+
+The image includes the frontend build, trained model, Python runtime, and dependencies. It uses the local SQLite store when `DATABASE_URL` is unset; it makes no network calls or model downloads at runtime. Persist local job and ticket data across container replacement by adding `-v tensorforge-data:/app/data`. The one-container command is independent of the optional Compose database below.
+
 ## Start the full app with one command
 
 Install Docker Desktop (macOS/Windows) or Docker Engine with Compose (Linux), then run this from the repository root:
@@ -20,7 +56,7 @@ Compose uses development-only defaults for `API_KEY` and `SUPPORT_PASSWORD`; its
 API_KEY='your-local-key' SUPPORT_PASSWORD='your-local-support-password' docker compose up --build -d
 ```
 
-For a local-only demo, the API key is `local-development-key` and support login password is `local-support-password`. Never expose this development stack to the public internet with default credentials. The Postgres service is only published on `127.0.0.1:5432`.
+For a local-only demo, the API key is `local-development-key` and support login password is `local-support-password`. Never expose this development stack to the public internet with default credentials. The Postgres service is only published on `127.0.0.1:5433`.
 
 The batch workbench can seed sample tickets into the database: open **Batch workbench**, choose **Load sample**, then **Run batch**. These synthetic demo records persist across app restarts.
 
@@ -47,13 +83,13 @@ The organizer’s supplied OpenAPI v2.1.0 contract is saved in `tensorforge-phas
 
 ## Docker images for macOS and other platforms
 
-Every push to `main` publishes `ghcr.io/geemalfernando/tensorforge-phase2:latest`; version tags publish matching version tags. GitHub Actions builds `linux/amd64` and `linux/arm64` images, so Docker Desktop selects the compatible image for Intel and Apple Silicon Macs. The image includes the trained model artifact; no training data or model download is needed at runtime.
+The GitHub Actions workflow is configured to publish `ghcr.io/geemalfernando/tensorforge-phase2` for `linux/amd64` and `linux/arm64`, so Docker Desktop can select a compatible image for Intel and Apple Silicon Macs. The package is not linked as a prerequisite: until a successful GHCR publish run is visible in Actions, build `tensorforge-mvp` from this repository using the command above. Either image includes the trained model artifact; no training data or model download is needed at runtime.
 
 ```bash
 docker pull ghcr.io/geemalfernando/tensorforge-phase2:latest
 ```
 
-The published app container serves the frontend and API together. For a full local stack including its own persistent Postgres database, use the Compose command above. To use an external database, configure `DATABASE_URL` with a PostgreSQL connection string. Keep API keys and database credentials out of source control.
+When the GHCR package is available, that image serves the frontend and API together. For a full local stack including its own persistent Postgres database, use the Compose command above. To use an external database, configure `DATABASE_URL` with a PostgreSQL connection string. Keep API keys and database credentials out of source control.
 
 ## API
 
