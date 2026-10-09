@@ -1,911 +1,931 @@
 1
-00:00:00,500 --> 00:00:04,242
+00:00:00,500 --> 00:00:03,915
 Hello, and welcome to our TensorForge 2.0 Phase 2 walkthrough.
 
 2
-00:00:04,242 --> 00:00:05,389
+00:00:03,915 --> 00:00:04,962
 This is Fresh Desk:
 
 3
-00:00:05,389 --> 00:00:09,734
+00:00:04,962 --> 00:00:08,928
 a customer support ticket classification and routing system for RideEat,
 
 4
-00:00:09,734 --> 00:00:13,778
+00:00:08,928 --> 00:00:12,618
 the fictional ride-hailing and food delivery platform in the brief.
 
 5
-00:00:14,228 --> 00:00:19,137
+00:00:12,968 --> 00:00:17,443
 In the next fifteen minutes we will show the working solution, explain the architecture,
 
 6
-00:00:19,137 --> 00:00:24,046
+00:00:17,443 --> 00:00:21,917
 walk through how our three machine learning models were trained, validated and improved,
 
 7
-00:00:24,046 --> 00:00:29,290
+00:00:21,917 --> 00:00:26,696
 and show exactly how we tested the authenticated evaluation API against the official contract.
 
 8
-00:00:30,940 --> 00:00:37,360
+00:00:28,246 --> 00:00:34,101
 Each ticket arrives with a channel, which is email, chat or call transcript, an optional subject,
 
 9
-00:00:37,360 --> 00:00:38,287
+00:00:34,101 --> 00:00:34,946
 and free text.
 
 10
-00:00:38,287 --> 00:00:44,111
+00:00:34,946 --> 00:00:40,258
 The text can be English, Sinhala, Tamil, Sinhala or Tamil typed in Latin script, emojis,
 
 11
-00:00:44,111 --> 00:00:45,766
+00:00:40,258 --> 00:00:41,766
 or a mix of all of these.
 
 12
-00:00:45,766 --> 00:00:49,804
+00:00:41,766 --> 00:00:45,448
 First, we predict the primary category, one of eleven values.
 
 13
-00:00:50,254 --> 00:00:55,164
+00:00:45,798 --> 00:00:50,278
 Second, a secondary category when the ticket clearly contains two issues, otherwise null.
 
 14
-00:00:55,164 --> 00:00:59,357
+00:00:50,278 --> 00:00:54,103
 And third, whether the ticket is urgent and needs immediate human attention.
 
 15
-00:00:59,807 --> 00:01:01,256
+00:00:54,453 --> 00:00:55,775
 The team is not predicted.
 
 16
-00:01:01,256 --> 00:01:06,998
+00:00:55,775 --> 00:01:01,012
 It is derived from the category using the fixed table on the right, exactly as the contract defines it.
 
 17
-00:01:06,998 --> 00:01:09,283
+00:01:01,012 --> 00:01:03,096
 The contract also adds consistency rules:
 
 18
-00:01:09,283 --> 00:01:12,181
+00:01:03,096 --> 00:01:05,740
 the secondary category must differ from the primary,
 
 19
-00:01:12,181 --> 00:01:15,526
+00:01:05,740 --> 00:01:08,791
 and spam is never urgent and never has a secondary category.
 
 20
-00:01:17,176 --> 00:01:21,876
+00:01:10,341 --> 00:01:14,626
 The guidelines are clear that simply wrapping a large language model is discouraged.
 
 21
-00:01:21,876 --> 00:01:26,240
+00:01:14,626 --> 00:01:18,604
 So every prediction in Fresh Desk comes from classifiers we trained ourselves:
 
 22
-00:01:26,240 --> 00:01:29,877
+00:01:18,604 --> 00:01:21,920
 TF-IDF features over words and characters, feeding linear models,
 
 23
-00:01:29,877 --> 00:01:34,241
+00:01:21,920 --> 00:01:25,898
 trained only on the four thousand labelled tickets supplied by the organisers.
 
 24
-00:01:34,691 --> 00:01:38,302
+00:01:26,248 --> 00:01:29,539
 We train three separate models, one for each prediction target.
 
 25
-00:01:38,302 --> 00:01:43,116
+00:01:29,539 --> 00:01:33,927
 The fitted pipelines are saved as a single artifact and baked into the Docker image,
 
 26
-00:01:43,116 --> 00:01:47,528
+00:01:33,927 --> 00:01:37,950
 so inference needs no internet, no model download and no external AI service.
 
 27
-00:01:47,528 --> 00:01:52,400
+00:01:37,950 --> 00:01:42,390
 And every response is checked against the official OpenAPI contract and JSON Schemas.
 
 28
-00:01:54,050 --> 00:01:55,493
+00:01:43,940 --> 00:01:45,298
 Here is the architecture.
 
 29
-00:01:55,493 --> 00:01:56,763
+00:01:45,298 --> 00:01:46,493
 There are two ways in.
 
 30
-00:01:56,763 --> 00:02:01,900
+00:01:46,493 --> 00:01:51,327
 On the left, the judges' evaluation harness calls the API directly with the team API key.
 
 31
-00:02:01,900 --> 00:02:04,786
-Below it, the Fresh Desk dashboard in the browser.
+00:01:51,327 --> 00:01:55,618
+Below it, Fresh Desk has a regular workspace and a separate Judge demo console.
 
 32
-00:02:04,786 --> 00:02:06,633
-The browser never holds the key:
+00:01:55,618 --> 00:01:58,606
+The regular workspace uses a same-origin server bridge,
 
 33
-00:02:06,633 --> 00:02:11,425
-it calls a same-origin dashboard route, and the server attaches the key internally.
+00:01:58,606 --> 00:02:01,593
+so the configured server key never reaches the browser.
 
 34
-00:02:11,875 --> 00:02:17,102
-Every protected request goes through the same checks, in the order the contract requires:
+00:02:01,593 --> 00:02:06,754
+In the Judge console, the evaluator enters their own key; it is verified by the API and held in
 
 35
-00:02:17,102 --> 00:02:23,446
-authentication first, then content type, then payload size, then JSON parsing, and finally field validation.
+00:02:06,754 --> 00:02:08,492
+page memory only until sign-out.
 
 36
-00:02:23,446 --> 00:02:27,088
-An unauthorised request never reaches the parser or the model.
+00:02:08,842 --> 00:02:13,611
+Every protected request goes through the same checks, in the order the contract requires:
 
 37
-00:02:27,538 --> 00:02:29,595
-Valid tickets go to the ticket model:
+00:02:13,611 --> 00:02:19,398
+authentication first, then content type, then payload size, then JSON parsing, and finally field validation.
 
 38
-00:02:29,595 --> 00:02:34,654
-the three trained pipelines, plus the fixed category to team map and the consistency rules.
+00:02:19,398 --> 00:02:22,720
+An unauthorised request never reaches the parser or the model.
 
 39
-00:02:34,654 --> 00:02:37,990
-The single and small batch endpoints run this synchronously.
+00:02:23,070 --> 00:02:24,945
+Valid tickets go to the ticket model:
 
 40
-00:02:38,440 --> 00:02:41,114
-Large evaluation runs use asynchronous jobs.
+00:02:24,945 --> 00:02:29,555
+the three trained pipelines, plus the fixed category to team map and the consistency rules.
 
 41
-00:02:41,114 --> 00:02:44,273
-The request is validated up front, stored in SQLite,
+00:02:29,555 --> 00:02:32,595
+The single and small batch endpoints run this synchronously.
 
 42
-00:02:44,273 --> 00:02:50,471
-and a background worker classifies the tickets, so health checks and live predictions stay responsive.
+00:02:32,945 --> 00:02:35,384
+Large evaluation runs use asynchronous jobs.
 
 43
-00:02:50,921 --> 00:02:55,797
-All of this ships as one Docker image that starts with a single docker run command and runs with no
+00:02:35,384 --> 00:02:38,266
+The request is validated up front, stored in SQLite,
 
 44
-00:02:55,797 --> 00:02:56,881
-network access at all.
+00:02:38,266 --> 00:02:43,920
+and a background worker classifies the tickets, so health checks and live predictions stay responsive.
 
 45
-00:02:58,531 --> 00:02:59,815
-Let's see it working.
+00:02:44,270 --> 00:02:48,720
+All of this ships as one Docker image that starts with a single docker run command and runs with no
 
 46
-00:02:59,815 --> 00:03:05,379
-This is the Fresh Desk home page, live on our hosted site at tensorforge-phase2.vercel.app,
+00:02:48,720 --> 00:02:49,708
+network access at all.
 
 47
-00:03:05,379 --> 00:03:07,948
-served by the same FastAPI app as the API.
+00:02:51,258 --> 00:02:52,430
+Let's see it working.
 
 48
-00:03:07,948 --> 00:03:13,267
-The status pill in the top right confirms the model is loaded and the service is ready.
+00:02:52,430 --> 00:02:57,508
+This is the Fresh Desk home page, live on our hosted site at tensorforge-phase2.vercel.app,
 
 49
-00:03:13,719 --> 00:03:16,949
-We open the desk and create a live chat ticket in Singlish:
+00:02:57,508 --> 00:02:59,852
+served by the same FastAPI app as the API.
 
 50
-00:03:16,949 --> 00:03:18,865
-Sinhala typed with English letters.
+00:02:59,852 --> 00:03:04,707
+The status pill in the top right confirms the model is loaded and the service is ready.
 
 51
-00:03:18,865 --> 00:03:24,067
-The customer says their order is an hour late, the driver won't answer, and they want a refund.
+00:03:05,057 --> 00:03:08,005
+We open the desk and create a live chat ticket in Singlish:
 
 52
-00:03:24,517 --> 00:03:26,658
-The prediction comes straight back.
+00:03:08,005 --> 00:03:09,754
+Sinhala typed with English letters.
 
 53
-00:03:26,658 --> 00:03:27,697
-Primary category:
+00:03:09,754 --> 00:03:14,500
+The customer says their order is an hour late, the driver won't answer, and they want a refund.
 
 54
-00:03:27,697 --> 00:03:30,511
-delivery delay, routed to Delivery Operations.
+00:03:14,851 --> 00:03:16,804
+The prediction comes straight back.
 
 55
-00:03:30,511 --> 00:03:31,673
-Secondary category:
+00:03:16,804 --> 00:03:17,752
+Primary category:
 
 56
-00:03:31,673 --> 00:03:35,893
-payment refund, because the customer also asked for their money back.
+00:03:17,752 --> 00:03:20,318
+delivery delay, routed to Delivery Operations.
 
 57
-00:03:35,893 --> 00:03:38,645
-The urgency model marks it standard priority.
+00:03:20,318 --> 00:03:21,378
+Secondary category:
 
 58
-00:03:38,645 --> 00:03:41,458
-Primary confidence is only thirty one percent,
+00:03:21,378 --> 00:03:25,227
+payment refund, because the customer also asked for their money back.
 
 59
-00:03:41,458 --> 00:03:45,495
-so Fresh Desk recommends human review before the ticket is routed.
+00:03:25,227 --> 00:03:27,737
+The urgency model marks it standard priority.
 
 60
-00:03:45,946 --> 00:03:47,108
-Next, a safety case.
+00:03:27,737 --> 00:03:30,303
+Primary confidence is only thirty one percent,
 
 61
-00:03:47,108 --> 00:03:51,351
-A passenger says the driver is not stopping the car, and they are scared.
+00:03:30,303 --> 00:03:33,985
+so Fresh Desk recommends human review before the ticket is routed.
 
 62
-00:03:51,351 --> 00:03:55,769
-The model routes it to Trust and Safety, with ninety six percent confidence,
+00:03:34,335 --> 00:03:35,396
+Next, a safety case.
 
 63
-00:03:55,769 --> 00:04:00,535
-and raises the urgent flag, so the ticket waits for a support agent to approve it.
+00:03:35,396 --> 00:03:39,268
+A passenger says the driver is not stopping the car, and they are scared.
 
 64
-00:04:03,893 --> 00:04:09,634
-Now a message in Tamil script, about an item missing from an order and a request for the money back.
+00:03:39,268 --> 00:03:43,299
+The model routes it to Trust and Safety, with ninety six percent confidence,
 
 65
-00:04:09,634 --> 00:04:13,709
-It goes to Food Operations, with payment refund as the secondary issue.
+00:03:43,299 --> 00:03:47,648
+and raises the urgent flag, so the ticket waits for a support agent to approve it.
 
 66
-00:04:13,709 --> 00:04:17,498
-Confidence here is low, so the ticket is flagged for human review.
+00:03:55,059 --> 00:04:00,297
+Now a message in Tamil script, about an item missing from an order and a request for the money back.
 
 67
-00:04:17,498 --> 00:04:19,163
-There is no translation step:
+00:04:00,297 --> 00:04:04,015
+It goes to Food Operations, with payment refund as the secondary issue.
 
 68
-00:04:19,163 --> 00:04:24,272
-character n-gram features let one model read Sinhala, Tamil and English scripts directly.
+00:04:04,015 --> 00:04:07,472
+Confidence here is low, so the ticket is flagged for human review.
 
 69
-00:04:24,723 --> 00:04:27,008
-And finally an email, with a subject line.
+00:04:07,472 --> 00:04:08,990
+There is no translation step:
 
 70
-00:04:27,008 --> 00:04:32,121
-The customer's diabetic father is waiting on an insulin delivery and the rider's phone is off.
+00:04:08,990 --> 00:04:13,651
+character n-gram features let one model read Sinhala, Tamil and English scripts directly.
 
 71
-00:04:32,121 --> 00:04:34,405
-Even though the email is written politely,
-
-72
-00:04:34,405 --> 00:04:40,389
-the model routes it to Delivery Operations with almost one hundred percent confidence, and flags it as urgent.
-
-73
-00:04:45,428 --> 00:04:49,702
+00:04:16,327 --> 00:04:20,223
 Every classified ticket lands in Live operations, a running view of routes,
 
-74
-00:04:49,702 --> 00:04:52,096
+72
+00:04:20,223 --> 00:04:22,404
 urgency and review status for the session.
 
-75
-00:04:52,957 --> 00:04:56,188
+73
+00:04:23,983 --> 00:04:26,929
 Urgent or low-confidence tickets go to the Support queue.
 
-76
-00:04:56,188 --> 00:04:59,532
+74
+00:04:26,929 --> 00:04:29,979
 Support staff sign in with a separate server-side password.
 
-77
-00:04:59,532 --> 00:05:02,423
+75
+00:04:29,979 --> 00:04:32,614
 The customer role cannot accept or reroute tickets.
 
-78
-00:05:02,877 --> 00:05:06,403
+76
+00:04:32,964 --> 00:04:36,183
 A support agent reviews the model's signals and accepts the ticket,
 
-79
-00:05:06,403 --> 00:05:09,877
+77
+00:04:36,183 --> 00:04:39,352
 or picks a different team and must give a reason for the override.
 
-80
-00:05:09,877 --> 00:05:12,455
+78
+00:04:39,352 --> 00:04:41,706
 The model's original prediction is never changed:
 
-81
-00:05:12,455 --> 00:05:14,561
+79
+00:04:41,706 --> 00:04:43,627
 the human decision is stored next to it.
 
+80
+00:04:57,388 --> 00:05:00,967
+Next in the navigation is the Judge demo, built for evaluators.
+
+81
+00:05:00,967 --> 00:05:03,069
+It gathers the evidence in one place:
+
 82
-00:05:21,228 --> 00:05:24,521
-The Batch workbench is the evaluation path in the dashboard.
+00:05:03,069 --> 00:05:08,181
+the live site, the hosted API, the contract tests, the repository, the offline Docker run,
 
 83
-00:05:24,521 --> 00:05:28,911
-Up to one hundred tickets run synchronously, through the predict batch endpoint.
+00:05:08,181 --> 00:05:11,476
+training and evaluation, the report, and this walkthrough.
 
 84
-00:05:28,911 --> 00:05:30,283
-Here is the sample batch.
+00:05:11,827 --> 00:05:14,914
+Below the checklist is every route in the evaluation contract,
 
 85
-00:05:30,734 --> 00:05:35,621
-The predictions come back in the same order as the request, each one echoing its ticket ID.
+00:05:14,914 --> 00:05:18,846
+from the public health check to the authenticated prediction and job endpoints,
 
 86
-00:05:36,073 --> 00:05:37,775
-Now a full synchronous batch:
+00:05:18,846 --> 00:05:21,236
+with a link to the raw Open A P I specification.
 
 87
-00:05:37,775 --> 00:05:42,646
-we paste one hundred tickets, the largest batch the predict batch endpoint accepts.
+00:05:21,585 --> 00:05:23,878
+Judges sign in with their own evaluation key.
 
 88
-00:05:42,646 --> 00:05:47,341
-Anything larger, up to five thousand tickets, becomes an asynchronous batch job,
+00:05:23,878 --> 00:05:29,429
+The page checks it with the auth verify endpoint, and keeps it in page memory only, never in browser storage.
 
 89
-00:05:47,341 --> 00:05:50,276
-which we show through the API later in this video.
+00:05:32,924 --> 00:05:34,892
+The console then calls the real API.
 
 90
-00:06:04,614 --> 00:06:07,182
-All one hundred predictions are back, in order,
+00:05:34,892 --> 00:05:38,880
+Here is a single prediction, with the full contract-shaped JSON response.
 
 91
-00:06:07,182 --> 00:06:11,607
-and can be downloaded as JSON in the same format the judges receive from the API.
+00:05:39,231 --> 00:05:43,184
+And a synchronous batch, with one prediction per ticket ID, in order.
 
 92
-00:06:13,258 --> 00:06:15,308
-Fresh Desk is also fully responsive.
+00:05:43,184 --> 00:05:49,372
+From the same console, judges can also submit an asynchronous job, poll it, fetch its results, or cancel it.
 
 93
-00:06:15,308 --> 00:06:17,586
-Here is the same hosted site on a phone.
+00:05:50,922 --> 00:05:53,924
+The Batch workbench is the evaluation path in the dashboard.
 
 94
-00:06:17,586 --> 00:06:22,939
-The header, navigation and landing page reflow into a single column, with nothing hidden away.
+00:05:53,924 --> 00:05:57,927
+Up to one hundred tickets run synchronously, through the predict batch endpoint.
 
 95
-00:06:23,536 --> 00:06:26,965
-Support staff and customers can raise a ticket from their phone.
+00:05:57,927 --> 00:05:59,177
+Here is the sample batch.
 
 96
-00:06:26,965 --> 00:06:31,734
-This customer says the driver took a long route, charged them double, and wants a refund.
+00:05:59,528 --> 00:06:03,987
+The predictions come back in the same order as the request, each one echoing its ticket ID.
 
 97
-00:06:32,867 --> 00:06:35,333
-The full prediction fits the small screen:
+00:06:05,246 --> 00:06:06,800
+Now a full synchronous batch:
 
 98
-00:06:35,333 --> 00:06:39,442
-Ride Operations as the route, ride trip issue as the primary category,
+00:06:06,800 --> 00:06:11,245
+we paste one hundred tickets, the largest batch the predict batch endpoint accepts.
 
 99
-00:06:39,442 --> 00:06:43,023
-payment refund as the secondary issue, and standard priority.
+00:06:11,245 --> 00:06:15,530
+Anything larger, up to five thousand tickets, becomes an asynchronous batch job,
 
 100
-00:06:43,023 --> 00:06:47,309
-Confidence is above fifty percent, so the ticket is routed automatically.
+00:06:15,530 --> 00:06:18,208
+which we show through the API later in this video.
 
 101
-00:06:56,495 --> 00:06:59,621
-Live operations and the Model lab work the same way on mobile,
+00:06:33,840 --> 00:06:36,183
+All one hundred predictions are back, in order,
 
 102
-00:06:59,621 --> 00:07:03,000
-so a support lead can check the queue and the models from anywhere.
+00:06:36,183 --> 00:06:40,219
+and can be downloaded as JSON in the same format the judges receive from the API.
 
 103
-00:07:11,248 --> 00:07:13,015
-Now, how the models were built.
+00:06:41,769 --> 00:06:43,640
+Fresh Desk is also fully responsive.
 
 104
-00:07:13,015 --> 00:07:14,953
-We used only the organisers' data:
+00:06:43,640 --> 00:06:45,719
+Here is the same hosted site on a phone.
 
 105
-00:07:14,953 --> 00:07:18,830
-four thousand training tickets and eight hundred validation tickets.
+00:06:45,719 --> 00:06:50,605
+The header, navigation and landing page reflow into a single column, with nothing hidden away.
 
 106
-00:07:18,830 --> 00:07:22,136
-The archive was downloaded from the official Drive folder,
+00:06:51,449 --> 00:06:54,578
+Support staff and customers can raise a ticket from their phone.
 
 107
-00:07:22,136 --> 00:07:26,069
-and the SHA-256 checksum of every file is recorded in the repository.
+00:06:54,578 --> 00:06:58,929
+This customer says the driver took a long route, charged them double, and wants a refund.
 
 108
-00:07:26,519 --> 00:07:29,907
-The models see only what the API will see at evaluation time:
+00:06:59,482 --> 00:07:01,730
+The full prediction fits the small screen:
 
 109
-00:07:29,907 --> 00:07:31,351
-channel, subject and text.
+00:07:01,730 --> 00:07:05,477
+Ride Operations as the route, ride trip issue as the primary category,
 
 110
-00:07:31,351 --> 00:07:35,517
-We deliberately excluded ticket IDs and the language labels in the dataset,
+00:07:05,477 --> 00:07:08,741
+payment refund as the secondary issue, and standard priority.
 
 111
-00:07:35,517 --> 00:07:41,460
-because the judges' requests never contain them, and a model that relied on them would fail on the holdout.
+00:07:08,741 --> 00:07:12,648
+Confidence is above fifty percent, so the ticket is routed automatically.
 
 112
-00:07:41,910 --> 00:07:44,442
-The validation set covers six language styles,
+00:07:24,302 --> 00:07:25,915
+Now, how the models were built.
 
 113
-00:07:44,442 --> 00:07:50,001
-from English and Singlish to Sinhala and Tamil script, with smaller Tanglish and mixed-script groups.
+00:07:25,915 --> 00:07:27,683
+We used only the organisers' data:
 
 114
-00:07:51,651 --> 00:07:53,514
-Each target has its own pipeline.
+00:07:27,683 --> 00:07:31,219
+four thousand training tickets and eight hundred validation tickets.
 
 115
-00:07:53,514 --> 00:07:58,822
-The category model is a class-balanced logistic regression over word unigrams and bigrams plus
+00:07:31,219 --> 00:07:34,236
+The archive was downloaded from the official Drive folder,
 
 116
-00:07:58,822 --> 00:08:01,815
-word-boundary character n-grams of length two to six.
+00:07:34,236 --> 00:07:37,824
+and the SHA-256 checksum of every file is recorded in the repository.
 
 117
-00:08:01,815 --> 00:08:06,558
-Character n-grams are what make the model work across scripts and spelling variants,
+00:07:38,174 --> 00:07:41,265
+The models see only what the API will see at evaluation time:
 
 118
-00:08:06,558 --> 00:08:08,986
-such as the many ways people type Singlish.
+00:07:41,265 --> 00:07:42,582
+channel, subject and text.
 
 119
-00:08:09,436 --> 00:08:14,218
-The secondary category model is a linear support vector machine with sigmoid calibration,
+00:07:42,582 --> 00:07:46,383
+We deliberately excluded ticket IDs and the language labels in the dataset,
 
 120
-00:08:14,218 --> 00:08:15,883
-so we get usable probabilities.
+00:07:46,383 --> 00:07:51,804
+because the judges' requests never contain them, and a model that relied on them would fail on the holdout.
 
 121
-00:08:15,883 --> 00:08:21,095
-A secondary category is only returned when its probability is above zero point two and it differs
+00:07:52,154 --> 00:07:54,465
+The validation set covers six language styles,
 
 122
-00:08:21,095 --> 00:08:22,008
-from the primary.
+00:07:54,465 --> 00:07:59,538
+from English and Singlish to Sinhala and Tamil script, with smaller Tanglish and mixed-script groups.
 
 123
-00:08:22,458 --> 00:08:26,787
-The urgency model is another balanced logistic regression on character n-grams,
+00:08:01,088 --> 00:08:02,788
+Each target has its own pipeline.
 
 124
-00:08:26,787 --> 00:08:31,609
-with a decision threshold of zero point three, chosen to favour catching urgent tickets.
+00:08:02,788 --> 00:08:07,630
+The category model is a class-balanced logistic regression over word unigrams and bigrams plus
 
 125
-00:08:31,609 --> 00:08:34,294
-For secondary and urgency we apply light cleanup:
+00:08:07,630 --> 00:08:10,360
+word-boundary character n-grams of length two to six.
 
 126
-00:08:34,294 --> 00:08:39,663
-normalising whitespace and removing quoted earlier correspondence and synthetic reference numbers.
+00:08:10,360 --> 00:08:14,687
+Character n-grams are what make the model work across scripts and spelling variants,
 
 127
-00:08:40,113 --> 00:08:42,987
-After the models, fixed rules enforce the contract:
+00:08:14,687 --> 00:08:16,902
+such as the many ways people type Singlish.
 
 128
-00:08:42,987 --> 00:08:46,423
-the team comes from the category table, spam is never urgent,
+00:08:17,252 --> 00:08:21,615
+The secondary category model is a linear support vector machine with sigmoid calibration,
 
 129
-00:08:46,423 --> 00:08:49,409
-and the secondary category cannot repeat the primary.
+00:08:21,615 --> 00:08:23,135
+so we get usable probabilities.
 
 130
-00:08:49,409 --> 00:08:55,324
-When confidence is below fifty percent or the message is three words or fewer, we recommend human review.
+00:08:23,135 --> 00:08:27,890
+A secondary category is only returned when its probability is above zero point two and it differs
 
 131
-00:08:56,974 --> 00:09:01,412
-Here is how the models were validated and improved, including what did not work.
+00:08:27,890 --> 00:08:28,723
+from the primary.
 
 132
-00:09:01,412 --> 00:09:05,683
-We started from a baseline at sixty two point nine percent category accuracy.
+00:08:29,073 --> 00:08:33,019
+The urgency model is another balanced logistic regression on character n-grams,
 
 133
-00:09:06,133 --> 00:09:09,888
-Our first round of tuning used an internal split of the training data,
+00:08:33,019 --> 00:08:37,415
+with a decision threshold of zero point three, chosen to favour catching urgent tickets.
 
 134
-00:09:09,888 --> 00:09:13,375
-where every candidate scored ninety-eight to ninety-nine percent.
+00:08:37,415 --> 00:08:39,863
+For secondary and urgency we apply light cleanup:
 
 135
-00:09:13,375 --> 00:09:14,662
-That was a warning sign:
+00:08:39,863 --> 00:08:44,758
+normalising whitespace and removing quoted earlier correspondence and synthetic reference numbers.
 
 136
-00:09:14,662 --> 00:09:17,988
-the synthetic training tickets are very similar to each other.
+00:08:45,108 --> 00:08:47,726
+After the models, fixed rules enforce the contract:
 
 137
-00:09:17,988 --> 00:09:23,191
-Sure enough, the candidate we picked there dropped to sixty point nine percent on the development
+00:08:47,726 --> 00:08:50,858
+the team comes from the category table, spam is never urgent,
 
 138
-00:09:23,191 --> 00:09:23,996
-validation set.
+00:08:50,858 --> 00:08:53,579
+and the secondary category cannot repeat the primary.
 
 139
-00:09:23,996 --> 00:09:27,000
-So we stopped trusting the internal split for selection.
+00:08:53,579 --> 00:08:58,969
+When confidence is below fifty percent or the message is three words or fewer, we recommend human review.
 
 140
-00:09:27,450 --> 00:09:31,606
-We also tried stripping greeting and sign-off boilerplate from the text.
+00:09:00,519 --> 00:09:04,567
+Here is how the models were validated and improved, including what did not work.
 
 141
-00:09:31,606 --> 00:09:36,570
-It sounded sensible, but accuracy fell to around fifty six percent, so we rejected it.
+00:09:04,567 --> 00:09:08,464
+We started from a baseline at sixty two point nine percent category accuracy.
 
 142
-00:09:36,570 --> 00:09:39,226
-Those polite phrases turn out to carry signal.
+00:09:08,814 --> 00:09:12,239
+Our first round of tuning used an internal split of the training data,
 
 143
-00:09:39,676 --> 00:09:42,175
-We then compared regularisation strengths,
+00:09:12,239 --> 00:09:15,419
+where every candidate scored ninety-eight to ninety-nine percent.
 
 144
-00:09:42,175 --> 00:09:45,746
-class weighting and feature settings on the development set,
+00:09:15,419 --> 00:09:16,593
+That was a warning sign:
 
 145
-00:09:45,746 --> 00:09:51,222
-kept the best primary configuration at sixty three percent accuracy and sixty five macro-F1,
+00:09:16,593 --> 00:09:19,627
+the synthetic training tickets are very similar to each other.
 
 146
-00:09:51,222 --> 00:09:53,126
-and swept the urgency threshold,
+00:09:19,627 --> 00:09:24,373
+Sure enough, the candidate we picked there dropped to sixty point nine percent on the development
 
 147
-00:09:53,126 --> 00:09:58,007
-which lifted urgency macro-F1 from ninety two point six to ninety three point one.
+00:09:24,373 --> 00:09:25,107
+validation set.
 
 148
-00:09:58,007 --> 00:10:02,411
-Every experiment, including the rejected ones, is saved in the repository.
+00:09:25,107 --> 00:09:27,847
+So we stopped trusting the internal split for selection.
 
 149
-00:10:04,061 --> 00:10:08,564
-These are the final scores on the eight hundred development validation tickets.
+00:09:28,197 --> 00:09:31,989
+We also tried stripping greeting and sign-off boilerplate from the text.
 
 150
-00:10:08,564 --> 00:10:12,383
-Category accuracy is sixty three percent, with sixty five macro-F1.
+00:09:31,989 --> 00:09:36,518
+It sounded sensible, but accuracy fell to around fifty six percent, so we rejected it.
 
 151
-00:10:12,383 --> 00:10:15,917
-Secondary category accuracy is ninety five and a half percent,
+00:09:36,518 --> 00:09:38,940
+Those polite phrases turn out to carry signal.
 
 152
-00:10:15,917 --> 00:10:20,135
-and urgency is ninety seven and a half percent with ninety three macro-F1.
+00:09:39,290 --> 00:09:41,570
+We then compared regularisation strengths,
 
 153
-00:10:20,135 --> 00:10:24,296
-All eight hundred predictions validate against the official JSON Schemas.
+00:09:41,570 --> 00:09:44,828
+class weighting and feature settings on the development set,
 
 154
-00:10:24,746 --> 00:10:29,355
-Per category, spam is perfect, and ride, account and delivery issues are strong.
+00:09:44,828 --> 00:09:49,823
+kept the best primary configuration at sixty three percent accuracy and sixty five macro-F1,
 
 155
-00:10:29,355 --> 00:10:34,424
-The weakest is order missing or wrong, which is most often confused with payment refund,
+00:09:49,823 --> 00:09:51,560
+and swept the urgency threshold,
 
 156
-00:10:34,424 --> 00:10:37,823
-since those customers usually ask for their money back too.
+00:09:51,560 --> 00:09:56,012
+which lifted urgency macro-F1 from ninety two point six to ninety three point one.
 
 157
-00:10:38,273 --> 00:10:41,802
-By language, Singlish is the strongest at over ninety percent,
+00:09:56,012 --> 00:10:00,030
+Every experiment, including the rejected ones, is saved in the repository.
 
 158
-00:10:41,802 --> 00:10:45,444
-while Sinhala script is the hardest at around forty six percent.
+00:10:01,580 --> 00:10:05,685
+These are the final scores on the eight hundred development validation tickets.
 
 159
-00:10:45,444 --> 00:10:46,583
-We want to be clear:
+00:10:05,685 --> 00:10:09,167
+Category accuracy is sixty three percent, with sixty five macro-F1.
 
 160
-00:10:46,583 --> 00:10:50,737
-these are development scores, and the validation set informed our tuning.
+00:10:09,167 --> 00:10:12,389
+Secondary category accuracy is ninety five and a half percent,
 
 161
-00:10:50,737 --> 00:10:53,242
-The judges' unseen holdout is the real test.
+00:10:12,389 --> 00:10:16,234
+and urgency is ninety seven and a half percent with ninety three macro-F1.
 
 162
-00:10:54,892 --> 00:10:59,985
-The Model lab page in the dashboard reads its numbers directly from the model artifact loaded on
+00:10:16,234 --> 00:10:20,028
+All eight hundred predictions validate against the official JSON Schemas.
 
 163
-00:10:59,985 --> 00:11:00,940
-the hosted server:
+00:10:20,378 --> 00:10:24,580
+Per category, spam is perfect, and ride, account and delivery issues are strong.
 
 164
-00:11:00,940 --> 00:11:05,343
-the three classifiers, their algorithms, their classes and their validation scores,
+00:10:24,580 --> 00:10:29,202
+The weakest is order missing or wrong, which is most often confused with payment refund,
 
 165
-00:11:05,343 --> 00:11:07,359
-together with the fixed routing table.
+00:10:29,202 --> 00:10:32,301
+since those customers usually ask for their money back too.
 
 166
-00:11:11,810 --> 00:11:15,256
-Now the evaluation API, which the judges call directly.
+00:10:32,651 --> 00:10:35,871
+By language, Singlish is the strongest at over ninety percent,
 
 167
-00:11:15,256 --> 00:11:17,386
-Health is public and needs no key.
+00:10:35,871 --> 00:10:39,194
+while Sinhala script is the hardest at around forty six percent.
 
 168
-00:11:17,836 --> 00:11:21,596
-Every prediction and job endpoint requires the team API key.
+00:10:39,194 --> 00:10:40,233
+We want to be clear:
 
 169
-00:11:21,596 --> 00:11:27,549
-A missing key or a wrong key returns 401, with a JSON error body and a WWW-Authenticate header,
+00:10:40,233 --> 00:10:44,023
+these are development scores, and the validation set informed our tuning.
 
 170
-00:11:27,549 --> 00:11:29,868
-before the request body is even read.
+00:10:44,023 --> 00:10:46,308
+The judges' unseen holdout is the real test.
 
 171
-00:11:30,318 --> 00:11:35,223
-With the right key, in either the X-API-Key header or an Authorization Bearer header,
+00:10:47,858 --> 00:10:50,996
+Now the evaluation API, which the judges call directly.
 
 172
-00:11:35,223 --> 00:11:38,685
-we get the prediction in exactly the contract's field names.
+00:10:50,996 --> 00:10:52,936
+Health is public and needs no key.
 
 173
-00:11:38,685 --> 00:11:43,993
-The key is read from the API_KEY environment variable at startup, compared in constant time,
+00:10:53,286 --> 00:10:56,716
+Every prediction and job endpoint requires the team API key.
 
 174
-00:11:43,993 --> 00:11:46,532
-never logged, and never sent to the browser.
+00:10:56,716 --> 00:11:02,147
+A missing key or a wrong key returns 401, with a JSON error body and a WWW-Authenticate header,
 
 175
-00:11:46,532 --> 00:11:51,033
-If no key is configured, the service refuses requests instead of running open.
+00:11:02,147 --> 00:11:04,262
+before the request body is even read.
 
 176
-00:11:52,683 --> 00:11:58,049
-Robustness is part of the scoring, so invalid input always gets a clean JSON error.
+00:11:04,612 --> 00:11:09,086
+With the right key, in either the X-API-Key header or an Authorization Bearer header,
 
 177
-00:11:58,049 --> 00:11:59,601
-Malformed JSON gets 400.
+00:11:09,086 --> 00:11:12,244
+we get the prediction in exactly the contract's field names.
 
 178
-00:11:59,601 --> 00:12:04,772
-An unknown channel or empty text gets 422, with details for every failing field.
+00:11:12,244 --> 00:11:17,085
+The key is read from the API_KEY environment variable at startup, compared in constant time,
 
 179
-00:12:05,222 --> 00:12:07,198
-A wrong content type gets 415.
+00:11:17,085 --> 00:11:19,401
+never logged, and never sent to the browser.
 
 180
-00:12:07,198 --> 00:12:11,609
-In a batch, a duplicate ticket ID fails the whole request with 422,
+00:11:19,401 --> 00:11:23,506
+If no key is configured, the service refuses requests instead of running open.
 
 181
-00:12:11,609 --> 00:12:14,770
-and the details carry the index of the bad item.
+00:11:25,056 --> 00:11:29,948
+Robustness is part of the scoring, so invalid input always gets a clean JSON error.
 
 182
-00:12:15,220 --> 00:12:19,838
-Even unknown routes return JSON, never an HTML page or a stack trace.
+00:11:29,948 --> 00:11:31,363
+Malformed JSON gets 400.
 
 183
-00:12:21,488 --> 00:12:27,279
-For large evaluation runs, the judges submit up to five thousand tickets as an asynchronous job.
+00:11:31,363 --> 00:11:36,078
+An unknown channel or empty text gets 422, with details for every failing field.
 
 184
-00:12:27,279 --> 00:12:33,311
-We validate every ticket up front, then return 202 with a job ID, a Location header and Retry-After.
+00:11:36,428 --> 00:11:38,231
+A wrong content type gets 415.
 
 185
-00:12:33,311 --> 00:12:38,740
-Sending the same Idempotency-Key again returns the same job instead of creating a new one.
+00:11:38,231 --> 00:11:42,256
+In a batch, a duplicate ticket ID fails the whole request with 422,
 
 186
-00:12:39,190 --> 00:12:42,657
-Asking for results before the job has finished gives 409.
+00:11:42,256 --> 00:11:45,140
+and the details carry the index of the bad item.
 
 187
-00:12:43,107 --> 00:12:47,634
-Polling the status shows the job succeeded with three thousand of three thousand processed.
+00:11:45,490 --> 00:11:49,701
+Even unknown routes return JSON, never an HTML page or a stack trace.
 
 188
-00:12:47,634 --> 00:12:51,315
-Results come back in request order and can be paged with offset and limit.
+00:11:51,251 --> 00:11:56,532
+For large evaluation runs, the judges submit up to five thousand tickets as an asynchronous job.
 
 189
-00:12:51,765 --> 00:12:53,211
-Unknown job IDs give 404.
+00:11:56,532 --> 00:12:02,032
+We validate every ticket up front, then return 202 with a job ID, a Location header and Retry-After.
 
 190
-00:12:53,211 --> 00:12:58,413
-Jobs are stored in SQLite and kept for twenty four hours, well above the six hour minimum.
+00:12:02,032 --> 00:12:06,983
+Sending the same Idempotency-Key again returns the same job instead of creating a new one.
 
 191
-00:12:58,413 --> 00:13:03,154
-We allow one running and three queued jobs, and if the container restarts mid-job,
+00:12:07,333 --> 00:12:10,499
+Asking for results before the job has finished gives 409.
 
 192
-00:13:03,154 --> 00:13:07,547
-the job ends as failed with the reason interrupted, instead of disappearing.
+00:12:10,849 --> 00:12:14,974
+Polling the status shows the job succeeded with three thousand of three thousand processed.
 
 193
-00:13:09,197 --> 00:13:10,359
-Next, the container.
+00:12:14,974 --> 00:12:18,328
+Results come back in request order and can be paged with offset and limit.
 
 194
-00:13:10,359 --> 00:13:14,425
-We build the image, then start it with networking completely disabled,
+00:12:18,678 --> 00:12:19,997
+Unknown job IDs give 404.
 
 195
-00:13:14,425 --> 00:13:17,329
-and the API key passed as an environment variable.
+00:12:19,997 --> 00:12:24,745
+Jobs are stored in SQLite and kept for twenty four hours, well above the six hour minimum.
 
 196
-00:13:17,329 --> 00:13:22,207
-It is healthy in about two seconds, well inside the hundred and twenty second limit.
+00:12:24,745 --> 00:12:29,070
+We allow one running and three queued jobs, and if the container restarts mid-job,
 
 197
-00:13:22,657 --> 00:13:26,064
-Inside that offline container, health reports the loaded model,
+00:12:29,070 --> 00:12:33,079
+the job ends as failed with the reason interrupted, instead of disappearing.
 
 198
-00:13:26,064 --> 00:13:30,661
-and a Sinhala ticket about a bag left in a car is correctly routed to Lost and Found.
+00:12:34,629 --> 00:12:35,689
+Next, the container.
 
 199
-00:13:31,111 --> 00:13:36,314
-And to prove there really is no network, a request to the internet from inside the container fails.
+00:12:35,689 --> 00:12:39,400
+We build the image, then start it with networking completely disabled,
 
 200
-00:13:36,314 --> 00:13:37,628
-The model never needs it.
+00:12:39,400 --> 00:12:42,050
+and the API key passed as an environment variable.
 
 201
-00:13:39,278 --> 00:13:44,914
-This is the documented single start command, docker run with the port mapping and the API key.
+00:12:42,050 --> 00:12:46,502
+It is healthy in about two seconds, well inside the hundred and twenty second limit.
 
 202
-00:13:44,914 --> 00:13:46,893
-Health returns 200 straight away.
+00:12:46,852 --> 00:12:49,958
+Inside that offline container, health reports the loaded model,
 
 203
-00:13:48,543 --> 00:13:50,730
-Finally, how we tested all of this.
+00:12:49,958 --> 00:12:54,148
+and a Sinhala ticket about a bag left in a car is correctly routed to Lost and Found.
 
 204
-00:13:50,730 --> 00:13:55,418
-Thirty nine automated tests cover the API, the job engine and the contract.
+00:12:54,498 --> 00:12:59,248
+And to prove there really is no network, a request to the internet from inside the container fails.
 
 205
-00:13:55,418 --> 00:14:01,731
-They validate responses against both the OpenAPI file and the organisers' draft 2020-12 JSON Schemas.
+00:12:59,248 --> 00:13:00,447
+The model never needs it.
 
 206
-00:14:02,181 --> 00:14:07,129
-The evaluation script runs all eight hundred validation tickets and checks every prediction against
+00:13:01,997 --> 00:13:07,136
+This is the documented single start command, docker run with the port mapping and the API key.
 
 207
-00:14:07,129 --> 00:14:08,179
-the official schemas:
+00:13:07,136 --> 00:13:08,940
+Health returns 200 straight away.
 
 208
-00:14:08,179 --> 00:14:10,179
-eight hundred out of eight hundred pass.
+00:13:10,490 --> 00:13:12,485
+Finally, how we tested all of this.
 
 209
-00:14:10,629 --> 00:14:14,205
-And our Postman collection behaves like the judges' harness:
+00:13:12,485 --> 00:13:16,761
+Thirty nine automated tests cover the API, the job engine and the contract.
 
 210
-00:14:14,205 --> 00:14:18,557
-thirty five requests covering correct, wrong and missing keys, bad input,
+00:13:16,761 --> 00:13:22,518
+They validate responses against both the OpenAPI file and the organisers' draft 2020-12 JSON Schemas.
 
 211
-00:14:18,557 --> 00:14:24,339
-batches and a full async job, with over two thousand seven hundred assertions, and zero failures.
+00:13:22,868 --> 00:13:27,380
+The evaluation script runs all eight hundred validation tickets and checks every prediction against
 
 212
-00:14:24,339 --> 00:14:27,200
-The same collection runs against the hosted URL.
+00:13:27,380 --> 00:13:28,337
+the official schemas:
 
 213
-00:14:28,850 --> 00:14:30,745
-To wrap up, our main findings.
+00:13:28,337 --> 00:13:30,159
+eight hundred out of eight hundred pass.
 
 214
-00:14:30,745 --> 00:14:34,913
-Character n-grams let one small, fast model handle Sinhala, Tamil,
+00:13:30,509 --> 00:13:33,770
+And our Postman collection behaves like the judges' harness:
 
 215
-00:14:34,913 --> 00:14:38,891
-English and their Latin-script forms, with no translation step.
+00:13:33,770 --> 00:13:37,738
+thirty five requests covering correct, wrong and missing keys, bad input,
 
 216
-00:14:38,891 --> 00:14:45,712
-And internal splits of synthetic data badly overstate accuracy, so model selection has to use held-out data.
+00:13:37,738 --> 00:13:43,010
+batches and a full async job, with over two thousand seven hundred assertions, and zero failures.
 
 217
-00:14:46,162 --> 00:14:48,100
-We are also honest about the limits.
+00:13:43,010 --> 00:13:45,619
+The same collection runs against the hosted URL.
 
 218
-00:14:48,100 --> 00:14:51,870
-Primary category accuracy of sixty three percent is the main weakness,
+00:13:47,169 --> 00:13:48,896
+To wrap up, our main findings.
 
 219
-00:14:51,870 --> 00:14:55,102
-with missing-order versus refund being the hardest boundary,
+00:13:48,896 --> 00:13:52,698
+Character n-grams let one small, fast model handle Sinhala, Tamil,
 
 220
-00:14:55,102 --> 00:14:57,902
-and Sinhala script being the hardest language group.
+00:13:52,698 --> 00:13:56,326
+English and their Latin-script forms, with no translation step.
 
 221
-00:14:58,352 --> 00:15:01,147
-That is why Fresh Desk keeps people in the loop.
+00:13:56,326 --> 00:14:02,546
+And internal splits of synthetic data badly overstate accuracy, so model selection has to use held-out data.
 
 222
-00:15:01,147 --> 00:15:06,095
-Review is recommended conservatively, on 485 of the eight hundred validation tickets,
+00:14:02,896 --> 00:14:04,664
+We are also honest about the limits.
 
 223
-00:15:06,095 --> 00:15:10,170
-and a support agent always makes the final routing decision for those.
+00:14:04,664 --> 00:14:08,103
+Primary category accuracy of sixty three percent is the main weakness,
 
 224
-00:15:11,820 --> 00:15:14,434
-Everything you have seen is in our repository:
+00:14:08,103 --> 00:14:11,050
+with missing-order versus refund being the hardest boundary,
 
 225
-00:15:14,434 --> 00:15:19,777
-the training and evaluation scripts, the saved experiments, the tests, the Postman collection,
+00:14:11,050 --> 00:14:13,604
+and Sinhala script being the hardest language group.
 
 226
-00:15:19,777 --> 00:15:21,482
-the Dockerfile and the report.
+00:14:13,954 --> 00:14:16,502
+That is why Fresh Desk keeps people in the loop.
 
 227
-00:15:21,482 --> 00:15:24,437
-The hosted evaluation endpoint runs this same image.
+00:14:16,502 --> 00:14:21,013
+Review is recommended conservatively, on 485 of the eight hundred validation tickets,
 
 228
-00:15:24,437 --> 00:15:25,744
+00:14:21,013 --> 00:14:24,728
+and a support agent always makes the final routing decision for those.
+
+229
+00:14:26,278 --> 00:14:28,662
+Everything you have seen is in our repository:
+
+230
+00:14:28,662 --> 00:14:33,532
+the training and evaluation scripts, the saved experiments, the tests, the Postman collection,
+
+231
+00:14:33,532 --> 00:14:35,087
+the Dockerfile and the report.
+
+232
+00:14:35,087 --> 00:14:37,781
+The hosted evaluation endpoint runs this same image.
+
+233
+00:14:37,781 --> 00:14:38,973
 Thank you for watching.

@@ -111,9 +111,6 @@ SCENES = [
                       "It goes to Food Operations, with payment refund as the secondary issue. Confidence here is low, so the "
                       "ticket is flagged for human review. There is no translation step: character n-gram features let one "
                       "model read Sinhala, Tamil and English scripts directly."),
-             dict(say="And finally an email, with a subject line. The customer's diabetic father is waiting on an insulin "
-                      "delivery and the rider's phone is off. Even though the email is written politely, the model routes it "
-                      "to Delivery Operations with almost one hundred percent confidence, and flags it as urgent."),
          ]),
 
     dict(id="demo_ops", kind="live",
@@ -125,6 +122,21 @@ SCENES = [
              dict(say="A support agent reviews the model's signals and accepts the ticket, or picks a different team and "
                       "must give a reason for the override. The model's original prediction is never changed: the "
                       "human decision is stored next to it."),
+         ]),
+
+    dict(id="demo_judge", kind="live",
+         beats=[
+             dict(say="Next in the navigation is the Judge demo, built for evaluators. It gathers the evidence in one "
+                      "place: the live site, the hosted API, the contract tests, the repository, the offline Docker run, "
+                      "training and evaluation, the report, and this walkthrough."),
+             dict(say="Below the checklist is every route in the evaluation contract, from the public health check to the "
+                      "authenticated prediction and job endpoints, with a link to the raw Open A P I specification."),
+             dict(say="Judges sign in with their own evaluation key. The page checks it with the auth verify endpoint, "
+                      "and keeps it in page memory only, never in browser storage."),
+             dict(say="The console then calls the real API. Here is a single prediction, with the full contract-shaped "
+                      "JSON response."),
+             dict(say="And a synchronous batch, with one prediction per ticket I D, in order. From the same console, judges "
+                      "can also submit an asynchronous job, poll it, fetch its results, or cancel it."),
          ]),
 
     dict(id="demo_batch", kind="live",
@@ -152,8 +164,6 @@ SCENES = [
              dict(say="The full prediction fits the small screen: Ride Operations as the route, ride trip issue as the "
                       "primary category, payment refund as the secondary issue, and standard priority. Confidence is above "
                       "fifty percent, so the ticket is routed automatically."),
-             dict(say="Live operations and the Model lab work the same way on mobile, so a support lead can check the "
-                      "queue and the models from anywhere."),
          ]),
 
     # ---------------------------------------------------------------- 4. Training
@@ -261,13 +271,6 @@ SCENES = [
              dict(show=3, say="By language, Singlish is the strongest at over ninety percent, while Sinhala script is the hardest "
                               "at around forty six percent. We want to be clear: these are development scores, and the validation "
                               "set informed our tuning. The judges' unseen holdout is the real test."),
-         ]),
-
-    dict(id="demo_models", kind="live",
-         beats=[
-             dict(say="The Model lab page in the dashboard reads its numbers directly from the model artifact loaded on "
-                      "the hosted server: the three classifiers, their algorithms, their classes and their validation "
-                      "scores, together with the fixed routing table."),
          ]),
 
     # ---------------------------------------------------------------- 5. API & testing

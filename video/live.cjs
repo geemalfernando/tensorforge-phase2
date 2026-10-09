@@ -7,7 +7,7 @@ const path = require("path");
 
 const [base, durFile, out, probe] = process.argv.slice(2);
 const durations = JSON.parse(fs.readFileSync(durFile, "utf8"));
-const GAP = 0.45;
+const GAP = 0.35;
 fs.mkdirSync(path.join(out, "frames"), { recursive: true });
 
 const SINGLISH = "bro mage order eka hour ekakata wada late, driver call ganne na. refund ekak denna";
@@ -106,18 +106,6 @@ const jobTickets = Array.from({ length: 100 }, (_, i) => ({
         await classify();
         await scrollToEl(page.getByTestId("ticket-panel"));
       },
-      async () => {
-        await scrollTo(0);
-        const channel = page.locator("select").first();
-        await moveTo(channel);
-        await channel.selectOption("email");
-        await sleep(500);
-        await typeInto(page.getByPlaceholder("TF-1048"), "TF-DEMO-004", 40);
-        await typeInto(page.locator("label", { hasText: "Subject" }).locator("input"), EMAIL_SUBJECT, 45);
-        await typeInto(page.getByPlaceholder(/For example/), EMAIL_TEXT, 14);
-        await classify();
-        await scrollToEl(page.getByTestId("ticket-panel"));
-      },
     ],
     demo_ops: [
       async () => {
@@ -144,6 +132,44 @@ const jobTickets = Array.from({ length: 100 }, (_, i) => ({
         await click(accept);
         await page.getByText("Accepted by support").first().waitFor();
         await scrollToEl(page.getByText("Accepted by support").first());
+      },
+    ],
+    demo_judge: [
+      async () => {
+        await scrollTo(0);
+        await click(nav("Judge demo"));
+        await page.getByRole("heading", { name: "What the judges evaluate" }).waitFor();
+        await sleep(800);
+        await scrollToEl(page.getByRole("heading", { name: "What the judges evaluate" }));
+        await sleep(2500);
+        await page.evaluate(() => window.scrollBy({ top: 350, behavior: "smooth" }));
+      },
+      async () => {
+        await scrollToEl(page.getByRole("heading", { name: "Routes in the evaluation contract" }));
+        await sleep(1500);
+        await page.evaluate(() => window.scrollBy({ top: 250, behavior: "smooth" }));
+      },
+      async () => {
+        const key = page.getByLabel("Evaluation API key");
+        await scrollToEl(key);
+        await typeInto(key, process.env.JUDGE_API_KEY, 60);
+        await click(page.getByRole("button", { name: "Verify key & open demo" }));
+        await page.getByRole("heading", { name: "API evaluation console" }).waitFor({ timeout: 30000 });
+        await scrollToEl(page.getByRole("heading", { name: "API evaluation console" }));
+      },
+      async () => {
+        await scrollToEl(page.getByLabel("Single ticket request JSON"));
+        await click(page.getByRole("button", { name: "Send prediction" }));
+        await page.getByText("HTTP 200").waitFor({ timeout: 30000 });
+        await scrollToEl(page.getByText("Latest response"));
+      },
+      async () => {
+        await scrollToEl(page.getByLabel("Judge batch request JSON"));
+        await click(page.getByRole("button", { name: "Run synchronous batch" }));
+        await page.getByText("POST /predict/batch").waitFor({ timeout: 30000 });
+        await scrollToEl(page.getByText("Latest response"));
+        await sleep(1200);
+        await page.evaluate(() => window.scrollBy({ top: 300, behavior: "smooth" }));
       },
     ],
     demo_batch: [
@@ -200,30 +226,6 @@ const jobTickets = Array.from({ length: 100 }, (_, i) => ({
         await page.evaluate(() => window.scrollBy({ top: 500, behavior: "smooth" }));
         await sleep(1500);
       },
-      async () => {
-        await scrollTo(0);
-        await click(nav("Live operations"));
-        await sleep(1500);
-        await scrollTo(600);
-        await sleep(1500);
-        await scrollTo(0);
-        await click(nav("Model lab"));
-        await sleep(1500);
-        await scrollTo(700);
-      },
-    ],
-    demo_models: [
-      async () => {
-        await scrollTo(0);
-        await click(nav("Model lab"));
-        await page.getByRole("heading", { name: "Secondary Category", exact: true }).waitFor();
-        await sleep(2500);
-        await scrollTo(420);
-        await sleep(3500);
-        await scrollTo(1400);
-        await sleep(3500);
-        await scrollTo(400);
-      },
     ],
   };
 
@@ -231,6 +233,7 @@ const jobTickets = Array.from({ length: 100 }, (_, i) => ({
   const only = process.env.ONLY ? new Set(process.env.ONLY.split(",")) : null;
   let cdp = await screencast(page, DESKTOP);
   const timeline = {};
+  if (!process.env.JUDGE_API_KEY) throw new Error("JUDGE_API_KEY is required to record the Judge demo console");
   for (const scene of Object.keys(ACTIONS)) {
     if (only && !only.has(scene)) continue;
     let desktopPage;

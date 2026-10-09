@@ -19,8 +19,8 @@ from scenes import SCENES  # noqa: E402
 FF = os.environ.get("FFMPEG", "ffmpeg")
 BASE_URL = os.environ.get("BASE_URL", "http://localhost:8765")
 VOICE = os.environ.get("VOICE", "Daniel")
-RATE = os.environ.get("RATE", "192")
-GAP, LEAD, TAIL, FPS = 0.45, 0.5, 0.7, 30
+RATE = os.environ.get("RATE", "215")
+GAP, LEAD, TAIL, FPS = 0.35, 0.5, 0.7, 30
 WORK = OUT = None
 
 # ------------------------------------------------------------------ text
@@ -62,10 +62,14 @@ def tts():
             out = WORK / "audio" / f"{s['id']}-{i}.wav"
             txt = WORK / "audio" / f"{s['id']}-{i}.txt"
             spoken = speech(b["say"])
-            if not out.exists() or txt.read_text() != spoken:
-                txt.write_text(spoken)
+            # The cache key includes the voice and rate, so changing either re-records the narration.
+            key = f"{VOICE} {RATE}\n{spoken}"
+            if not out.exists() or not txt.exists() or txt.read_text() != key:
+                txt.write_text(key)
+                spoken_file = txt.with_suffix(".say")
+                spoken_file.write_text(spoken)
                 run(["say", "-v", VOICE, "-r", RATE, "--file-format=WAVE", "--data-format=LEI16@48000",
-                     "-o", str(out), "-f", str(txt)])
+                     "-o", str(out), "-f", str(spoken_file)])
             b["dur"] = wav_seconds(out)
             b["wav"] = out
 
