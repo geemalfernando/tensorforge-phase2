@@ -77,8 +77,8 @@ const JUDGE_CHECKLIST = [
     title: "Training and evaluation",
     status: "75 / 25",
     detail: "Locally trained TF-IDF classifiers; held-out split, per-class diagnostics, and no LLM calls at runtime.",
-    href: `${REPO_URL}/blob/main/notebooks/final_model_release.ipynb`,
-    link: "Open release notebook",
+    href: `${REPO_URL}/blob/main/docs/tensorforge-model-report.pdf`,
+    link: "Open model report",
   },
   {
     title: "Five-page report",
@@ -355,7 +355,6 @@ export default function JudgeDemo({ apiKey, onAuthorize, onClear }) {
   if (!apiKey) {
     return (
       <div className="space-y-5">
-        <JudgeOverview />
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,.7fr)]">
           <section className="panel p-5 sm:p-7">
             <p className="kicker">Evaluation access</p>
@@ -398,6 +397,7 @@ export default function JudgeDemo({ apiKey, onAuthorize, onClear }) {
           </aside>
           <ResponsePanel response={response} />
         </div>
+        <JudgeOverview />
       </div>
     );
   }
