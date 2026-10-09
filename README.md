@@ -10,7 +10,9 @@ Install Docker Desktop (macOS/Windows) or Docker Engine with Compose (Linux), th
 docker compose up --build -d
 ```
 
-This starts the dashboard and API together with a persistent PostgreSQL database. Open <http://localhost:8000>; check readiness at <http://localhost:8000/health>. The first build can take a few minutes. Stop the app with `docker compose down`; database records remain in the Compose volume. `docker compose down -v` also deletes the stored database.
+This starts the dashboard and API together with a persistent PostgreSQL database. By default, the app is available at <http://localhost:8080> and PostgreSQL at `localhost:5433`; these ports avoid common local development services already using 8000 or 5432. Check readiness at <http://localhost:8080/health>. The first build can take a few minutes. Stop the app with `docker compose down`; database records remain in the Compose volume. `docker compose down -v` also deletes the stored database.
+
+To choose other host ports, set `APP_PORT` and `POSTGRES_PORT`, for example: `APP_PORT=18000 POSTGRES_PORT=15432 docker compose up --build -d`.
 
 Compose uses development-only defaults for `API_KEY` and `SUPPORT_PASSWORD`; its local Postgres credentials are `tensorforge` / `tensorforge-local-dev`. Override the API key and support password before starting if needed:
 
