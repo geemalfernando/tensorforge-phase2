@@ -14,7 +14,7 @@ const SINGLISH = "bro mage order eka hour ekakata wada late, driver call ganne n
 const EMAIL_SUBJECT = "Re: Order #48213";
 const EMAIL_TEXT = "Hello, my father is diabetic and the insulin pack in my order has not arrived. The rider's phone is off. Kindly advise.";
 const MOBILE_TEXT = "Driver took a long route and charged me double. The app also shows the ride as not completed. Please refund";
-const jobTickets = Array.from({ length: 3000 }, (_, i) => ({
+const jobTickets = Array.from({ length: 100 }, (_, i) => ({
   ticket_id: "EVAL-" + String(i).padStart(4, "0"),
   channel: ["chat", "email", "call_transcript"][i % 3],
   text: ["my order is two hours late and the rider is not answering", "charged twice for one ride, please refund",
@@ -166,13 +166,13 @@ const jobTickets = Array.from({ length: 3000 }, (_, i) => ({
         await page.getByLabel("Batch request JSON").fill(JSON.stringify({ tickets: jobTickets }));
         await sleep(1200);
         await click(page.getByRole("button", { name: "Run batch ↗" }));
-        await page.getByRole("heading", { name: "3000 predictions", exact: true }).waitFor({ timeout: 120000 });
+        await page.getByRole("heading", { name: "100 predictions", exact: true }).waitFor({ timeout: 120000 });
       },
       async () => {
-        await scrollToEl(page.getByRole("heading", { name: "3000 predictions", exact: true }));
+        await scrollToEl(page.getByRole("heading", { name: "100 predictions", exact: true }));
         const dl = page.waitForEvent("download");
         await click(page.getByRole("button", { name: "Download JSON ↓" }).last());
-        await (await dl).saveAs(path.join(out, "predictions-3000.json"));
+        await (await dl).saveAs(path.join(out, "predictions-100.json"));
         await scrollTo(1400);
       },
     ],

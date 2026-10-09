@@ -9,23 +9,24 @@ Narration for the Phase 2 walkthrough video, one section per scene. The start ti
 | 01:16 | Our own trained classifiers — not an LLM wrapper | Slide |
 | 01:53 | Two entry points, one model, one contract | Slide |
 | 02:58 | Demo: intake | Live dashboard |
-| 04:25 | Demo: ops | Live dashboard |
-| 04:56 | Demo: batch | Live dashboard |
-| 05:34 | Organiser data only, with provenance | Slide |
-| 06:14 | Three pipelines, tuned separately | Slide |
-| 07:19 | What we tried, what we kept, what we rejected | Slide |
-| 08:26 | Development validation (800 tickets) | Slide |
-| 09:17 | Demo: models | Live dashboard |
-| 09:34 | Key from the API_KEY environment variable, checked first | Terminal capture |
-| 10:15 | Bad input gets a clean 4xx JSON error — never a 5xx | Terminal capture |
-| 10:44 | Submit → poll → fetch results | Terminal capture |
-| 11:32 | Single docker run, no internet at runtime | Terminal capture |
-| 12:02 | The documented start command | Terminal capture |
-| 12:11 | Automated checks against the official contract | Terminal capture |
-| 12:51 | What we learned | Slide |
-| 13:34 | Fresh Desk | Slide |
+| 04:44 | Demo: ops | Live dashboard |
+| 05:20 | Demo: batch | Live dashboard |
+| 06:12 | The same desk, in your pocket | Live dashboard |
+| 07:10 | Organiser data only, with provenance | Slide |
+| 07:51 | Three pipelines, tuned separately | Slide |
+| 08:56 | What we tried, what we kept, what we rejected | Slide |
+| 10:03 | Development validation (800 tickets) | Slide |
+| 10:54 | Demo: models | Live dashboard |
+| 11:11 | Key from the API_KEY environment variable, checked first | Terminal capture |
+| 11:52 | Bad input gets a clean 4xx JSON error — never a 5xx | Terminal capture |
+| 12:21 | Submit → poll → fetch results | Terminal capture |
+| 13:08 | Single docker run, no internet at runtime | Terminal capture |
+| 13:38 | The documented start command | Terminal capture |
+| 13:48 | Automated checks against the official contract | Terminal capture |
+| 14:28 | What we learned | Slide |
+| 15:11 | Fresh Desk | Slide |
 
-Total length: 13:50.
+Total length: 15:26.
 
 ## 00:00 — Fresh Desk
 
@@ -61,19 +62,19 @@ All of this ships as one Docker image that starts with a single docker run comma
 
 ## 02:58 — Demo: intake
 
-Let's see it working. This is the Fresh Desk home page, running locally from the same FastAPI server that serves the API. The status pill in the top right confirms the model is loaded and the service is ready.
+Let's see it working. This is the Fresh Desk home page, live on our hosted site at tensorforge-phase2.vercel.app, served by the same FastAPI app as the API. The status pill in the top right confirms the model is loaded and the service is ready.
 
 We open the desk and create a live chat ticket in Singlish: Sinhala typed with English letters. The customer says their order is an hour late, the driver won't answer, and they want a refund.
 
-The prediction comes back in milliseconds. Primary category: delivery delay, routed to Delivery Operations. Secondary category: payment refund, because the customer also asked for their money back. And the urgency model flags it as urgent: the customer has waited an hour and cannot reach the driver.
+The prediction comes straight back. Primary category: delivery delay, routed to Delivery Operations. Secondary category: payment refund, because the customer also asked for their money back. The urgency model marks it standard priority. Primary confidence is only thirty one percent, so Fresh Desk recommends human review before the ticket is routed.
 
-Next, a safety case. A passenger says the driver is not stopping the car, and they are scared. The model routes it to Trust and Safety, with high confidence, and raises the urgent flag.
+Next, a safety case. A passenger says the driver is not stopping the car, and they are scared. The model routes it to Trust and Safety, with ninety six percent confidence, and raises the urgent flag, so the ticket waits for a support agent to approve it.
 
 Now a message in Tamil script, about an item missing from an order and a request for the money back. It goes to Food Operations, with payment refund as the secondary issue. Confidence here is low, so the ticket is flagged for human review. There is no translation step: character n-gram features let one model read Sinhala, Tamil and English scripts directly.
 
-And finally an email, with a subject line. The customer's diabetic father is waiting on an insulin delivery and the rider's phone is off. Even though the email is written politely, the urgency model picks up that this needs immediate attention.
+And finally an email, with a subject line. The customer's diabetic father is waiting on an insulin delivery and the rider's phone is off. Even though the email is written politely, the model routes it to Delivery Operations with almost one hundred percent confidence, and flags it as urgent.
 
-## 04:25 — Demo: ops
+## 04:44 — Demo: ops
 
 Every classified ticket lands in Live operations, a running view of routes, urgency and review status for the session.
 
@@ -81,17 +82,27 @@ Urgent or low-confidence tickets go to the Support queue. Support staff sign in 
 
 A support agent reviews the model's signals and accepts the ticket, or picks a different team and must give a reason for the override. The model's original prediction is never changed: the human decision is stored next to it.
 
-## 04:56 — Demo: batch
+## 05:20 — Demo: batch
 
 The Batch workbench is the evaluation path in the dashboard. Up to one hundred tickets run synchronously, through the predict batch endpoint. Here is the sample batch.
 
 The predictions come back in the same order as the request, each one echoing its ticket ID.
 
-Now an evaluation-sized run. We paste three thousand tickets. Above one hundred tickets, the workbench switches to an asynchronous batch job: it submits, polls the job status, and fetches the results when the job has succeeded.
+Now a full synchronous batch: we paste one hundred tickets, the largest batch the predict batch endpoint accepts. Anything larger, up to five thousand tickets, becomes an asynchronous batch job, which we show through the API later in this video.
 
-All three thousand predictions are back, in order, and can be downloaded as JSON in the same format the judges receive from the API.
+All one hundred predictions are back, in order, and can be downloaded as JSON in the same format the judges receive from the API.
 
-## 05:34 — Organiser data only, with provenance
+## 06:12 — The same desk, in your pocket
+
+Fresh Desk is also fully responsive. Here is the same hosted site on a phone. The header, navigation and landing page reflow into a single column, with nothing hidden away.
+
+Support staff and customers can raise a ticket from their phone. This customer says the driver took a long route, charged them double, and wants a refund.
+
+The full prediction fits the small screen: Ride Operations as the route, ride trip issue as the primary category, payment refund as the secondary issue, and standard priority. Confidence is above fifty percent, so the ticket is routed automatically.
+
+Live operations and the Model lab work the same way on mobile, so a support lead can check the queue and the models from anywhere.
+
+## 07:10 — Organiser data only, with provenance
 
 Now, how the models were built. We used only the organisers' data: four thousand training tickets and eight hundred validation tickets. The archive was downloaded from the official Drive folder, and the SHA-256 checksum of every file is recorded in the repository.
 
@@ -99,7 +110,7 @@ The models see only what the API will see at evaluation time: channel, subject a
 
 The validation set covers six language styles, from English and Singlish to Sinhala and Tamil script, with smaller Tanglish and mixed-script groups.
 
-## 06:14 — Three pipelines, tuned separately
+## 07:51 — Three pipelines, tuned separately
 
 Each target has its own pipeline. The category model is a class-balanced logistic regression over word unigrams and bigrams plus word-boundary character n-grams of length two to six. Character n-grams are what make the model work across scripts and spelling variants, such as the many ways people type Singlish.
 
@@ -109,7 +120,7 @@ The urgency model is another balanced logistic regression on character n-grams, 
 
 After the models, fixed rules enforce the contract: the team comes from the category table, spam is never urgent, and the secondary category cannot repeat the primary. When confidence is below fifty percent or the message is three words or fewer, we recommend human review.
 
-## 07:19 — What we tried, what we kept, what we rejected
+## 08:56 — What we tried, what we kept, what we rejected
 
 Here is how the models were validated and improved, including what did not work. We started from a baseline at sixty two point nine percent category accuracy.
 
@@ -119,7 +130,7 @@ We also tried stripping greeting and sign-off boilerplate from the text. It soun
 
 We then compared regularisation strengths, class weighting and feature settings on the development set, kept the best primary configuration at sixty three percent accuracy and sixty five macro-F1, and swept the urgency threshold, which lifted urgency macro-F1 from ninety two point six to ninety three point one. Every experiment, including the rejected ones, is saved in the repository.
 
-## 08:26 — Development validation (800 tickets)
+## 10:03 — Development validation (800 tickets)
 
 These are the final scores on the eight hundred development validation tickets. Category accuracy is sixty three percent, with sixty five macro-F1. Secondary category accuracy is ninety five and a half percent, and urgency is ninety seven and a half percent with ninety three macro-F1. All eight hundred predictions validate against the official JSON Schemas.
 
@@ -127,11 +138,11 @@ Per category, spam is perfect, and ride, account and delivery issues are strong.
 
 By language, Singlish is the strongest at over ninety percent, while Sinhala script is the hardest at around forty six percent. We want to be clear: these are development scores, and the validation set informed our tuning. The judges' unseen holdout is the real test.
 
-## 09:17 — Demo: models
+## 10:54 — Demo: models
 
-The Model lab page in the dashboard shows the same numbers, read directly from the loaded model artifact on the server: the three classifiers, their algorithms, their classes and their validation scores, together with the fixed routing table.
+The Model lab page in the dashboard reads its numbers directly from the model artifact loaded on the hosted server: the three classifiers, their algorithms, their classes and their validation scores, together with the fixed routing table.
 
-## 09:34 — Key from the API_KEY environment variable, checked first
+## 11:11 — Key from the API_KEY environment variable, checked first
 
 Now the evaluation API, which the judges call directly. Health is public and needs no key.
 
@@ -139,7 +150,7 @@ Every prediction and job endpoint requires the team API key. A missing key or a 
 
 With the right key, in either the X-API-Key header or an Authorization Bearer header, we get the prediction in exactly the contract's field names. The key is read from the API_KEY environment variable at startup, compared in constant time, never logged, and never sent to the browser. If no key is configured, the service refuses requests instead of running open.
 
-## 10:15 — Bad input gets a clean 4xx JSON error — never a 5xx
+## 11:52 — Bad input gets a clean 4xx JSON error — never a 5xx
 
 Robustness is part of the scoring, so invalid input always gets a clean JSON error. Malformed JSON gets 400. An unknown channel or empty text gets 422, with details for every failing field.
 
@@ -147,7 +158,7 @@ A wrong content type gets 415. In a batch, a duplicate ticket ID fails the whole
 
 Even unknown routes return JSON, never an HTML page or a stack trace.
 
-## 10:44 — Submit → poll → fetch results
+## 12:21 — Submit → poll → fetch results
 
 For large evaluation runs, the judges submit up to five thousand tickets as an asynchronous job. We validate every ticket up front, then return 202 with a job ID, a Location header and Retry-After. Sending the same Idempotency-Key again returns the same job instead of creating a new one.
 
@@ -157,7 +168,7 @@ Polling the status shows the job succeeded with three thousand of three thousand
 
 Unknown job IDs give 404. Jobs are stored in SQLite and kept for twenty four hours, well above the six hour minimum. We allow one running and three queued jobs, and if the container restarts mid-job, the job ends as failed with the reason interrupted, instead of disappearing.
 
-## 11:32 — Single docker run, no internet at runtime
+## 13:08 — Single docker run, no internet at runtime
 
 Next, the container. We build the image, then start it with networking completely disabled, and the API key passed as an environment variable. It is healthy in about two seconds, well inside the hundred and twenty second limit.
 
@@ -165,11 +176,11 @@ Inside that offline container, health reports the loaded model, and a Sinhala ti
 
 And to prove there really is no network, a request to the internet from inside the container fails. The model never needs it.
 
-## 12:02 — The documented start command
+## 13:38 — The documented start command
 
 This is the documented single start command, docker run with the port mapping and the API key. Health returns 200 straight away.
 
-## 12:11 — Automated checks against the official contract
+## 13:48 — Automated checks against the official contract
 
 Finally, how we tested all of this. Thirty nine automated tests cover the API, the job engine and the contract. They validate responses against both the OpenAPI file and the organisers' draft 2020-12 JSON Schemas.
 
@@ -177,7 +188,7 @@ The evaluation script runs all eight hundred validation tickets and checks every
 
 And our Postman collection behaves like the judges' harness: thirty five requests covering correct, wrong and missing keys, bad input, batches and a full async job, with over two thousand seven hundred assertions, and zero failures. The same collection runs against the hosted URL.
 
-## 12:51 — What we learned
+## 14:28 — What we learned
 
 To wrap up, our main findings. Character n-grams let one small, fast model handle Sinhala, Tamil, English and their Latin-script forms, with no translation step. And internal splits of synthetic data badly overstate accuracy, so model selection has to use held-out data.
 
@@ -185,6 +196,6 @@ We are also honest about the limits. Primary category accuracy of sixty three pe
 
 That is why Fresh Desk keeps people in the loop. Review is recommended conservatively, on 485 of the eight hundred validation tickets, and a support agent always makes the final routing decision for those.
 
-## 13:34 — Fresh Desk
+## 15:11 — Fresh Desk
 
 Everything you have seen is in our repository: the training and evaluation scripts, the saved experiments, the tests, the Postman collection, the Dockerfile and the report. The hosted evaluation endpoint runs this same image. Thank you for watching.

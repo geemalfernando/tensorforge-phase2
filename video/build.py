@@ -31,7 +31,7 @@ CAPTION = [("four hundred and eighty five", "485"), ("T F I D F", "TF-IDF"), ("S
            ("Idempotency Key", "Idempotency-Key"), ("draft twenty twenty", "draft 2020-12"), ("macro F 1", "macro-F1"),
            ("I Ds", "IDs"), (" I D", " ID"), ("A I ", "AI "), ("four oh one", "401"), ("four oh nine", "409"),
            ("four oh four", "404"), ("two oh two", "202"), ("four twenty two", "422"), ("four fifteen", "415"),
-           ("four hundred", "400"), ("two hundred straight", "200 straight"), ("API key environment variable", "API_KEY environment variable")]
+           ("four hundred", "400"), ("tensorforge phase two dot vercel dot app", "tensorforge-phase2.vercel.app"), ("two hundred straight", "200 straight"), ("API key environment variable", "API_KEY environment variable")]
 
 
 def speech(text):
@@ -264,6 +264,29 @@ def slide_terminal(s, show, term_dir):
  <div class='term'><div class='bar3'><i></i><i></i><i></i><span>zsh — URL=http://localhost:8765 · key from $API_KEY (not shown)</span></div><div class='tb'>{''.join(out)}</div></div></div>""")
 
 
+# Phone screen rectangle on the mobile demo background; the iPhone 14 Pro viewport is 393x852.
+PHONE = dict(x=250, y=86, w=420, h=908, bezel=18)
+
+
+def slide_mobile(s):
+    p = PHONE
+    items = "".join(f"<li>{esc(t)}</li>" for t in s["items"])
+    return page(f"""<style>.phone{{position:absolute;left:{p['x'] - p['bezel']}px;top:{p['y'] - p['bezel']}px;
+ width:{p['w'] + 2 * p['bezel']}px;height:{p['h'] + 2 * p['bezel']}px;border-radius:68px;background:#0b1512;
+ box-shadow:0 50px 120px -50px #0f2a25cc,0 0 0 2px #2c4a43}} .side{{position:absolute;left:820px;top:250px;width:980px}}
+ .side h1{{margin-bottom:56px}}</style>
+ <div class='phone'></div><div class='side'><div class='kicker'>{esc(s['kicker'])}</div><h1>{esc(s['title'])}</h1>
+ <ul class='items'>{items}</ul></div>""")
+
+
+def phone_bezel():
+    # Transparent everywhere except the bezel ring, so it masks the corners of the screen recording.
+    p = PHONE
+    return f"""<!doctype html><html><head><style>html,body{{margin:0;width:1920px;height:1080px;background:transparent}}
+ .b{{position:absolute;left:{p['x'] - p['bezel']}px;top:{p['y'] - p['bezel']}px;width:{p['w']}px;height:{p['h']}px;
+ border:{p['bezel']}px solid #0b1512;border-radius:68px}}</style></head><body><div class='b'></div></body></html>"""
+
+
 LAYOUTS = dict(title=slide_title, bullets=slide_bullets, table=slide_table, architecture=slide_architecture,
                stats=slide_stats, models=slide_models, timeline=slide_timeline, results=slide_results)
 
@@ -271,6 +294,12 @@ LAYOUTS = dict(title=slide_title, bullets=slide_bullets, table=slide_table, arch
 def render_slides():
     jobs = []
     for s in SCENES:
+        if s.get("mobile"):
+            for name, h, transparent in (("bg", slide_mobile(s), False), ("bezel", phone_bezel(), True)):
+                hp = WORK / "html" / f"{s['id']}-{name}.html"
+                hp.write_text(h, encoding="utf-8")
+                s[name] = WORK / "slides" / f"{s['id']}-{name}.png"
+                jobs.append([str(hp), str(s[name])] + (["transparent"] if transparent else []))
         if s["kind"] == "live":
             continue
         for i, b in enumerate(s["beats"]):
@@ -354,9 +383,17 @@ def live_segment(s, idx, rec):
     wav = WORK / "segments" / f"{idx:02d}-{s['id']}.wav"
     scene_audio(s, offsets, total, wav)
     out = WORK / "segments" / f"{idx:02d}-{s['id']}.mp4"
-    run([FF, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(cc), "-i", str(wav),
-         "-vf", f"scale=1920:1080:flags=lanczos,fps={FPS},format=yuv420p,fade=t=in:st=0:d=0.35,fade=t=out:st={total - 0.35:.3f}:d=0.35",
-         "-t", f"{total:.3f}", *ENC, str(out)])
+    fade = f"fps={FPS},format=yuv420p,fade=t=in:st=0:d=0.35,fade=t=out:st={total - 0.35:.3f}:d=0.35"
+    if s.get("mobile"):
+        p = PHONE
+        video = ["-loop", "1", "-i", str(s["bg"]), "-loop", "1", "-i", str(s["bezel"])]
+        graph = (f"[0:v]scale={p['w']}:{p['h']}:flags=lanczos[scr];[2:v][scr]overlay={p['x']}:{p['y']}[a];"
+                 f"[a][3:v]overlay=0:0,{fade}[v]")
+        run([FF, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(cc), "-i", str(wav), *video,
+             "-filter_complex", graph, "-map", "[v]", "-map", "1:a", "-t", f"{total:.3f}", *ENC, str(out)])
+    else:
+        run([FF, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(cc), "-i", str(wav),
+             "-vf", f"scale=1920:1080:flags=lanczos,{fade}", "-t", f"{total:.3f}", *ENC, str(out)])
     return out, offsets, total
 
 

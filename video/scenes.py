@@ -94,23 +94,25 @@ SCENES = [
     # ---------------------------------------------------------------- 3. Live demo
     dict(id="demo_intake", kind="live",
          beats=[
-             dict(say="Let's see it working. This is the Fresh Desk home page, running locally from the same FastAPI "
-                      "server that serves the API. The status pill in the top right confirms the model is loaded and the "
-                      "service is ready."),
+             dict(say="Let's see it working. This is the Fresh Desk home page, live on our hosted site at tensorforge "
+                      "phase two dot vercel dot app, served by the same FastAPI app as the API. The status pill in the top "
+                      "right confirms the model is loaded and the service is ready."),
              dict(say="We open the desk and create a live chat ticket in Singlish: Sinhala typed with English letters. "
                       "The customer says their order is an hour late, the driver won't answer, and they want a refund."),
-             dict(say="The prediction comes back in milliseconds. Primary category: delivery delay, routed to Delivery "
+             dict(say="The prediction comes straight back. Primary category: delivery delay, routed to Delivery "
                       "Operations. Secondary category: payment refund, because the customer also asked for their money back. "
-                      "And the urgency model flags it as urgent: the customer has waited an hour and cannot reach the driver."),
+                      "The urgency model marks it standard priority. Primary confidence is only thirty one percent, so "
+                      "Fresh Desk recommends human review before the ticket is routed."),
              dict(say="Next, a safety case. A passenger says the driver is not stopping the car, and they are scared. "
-                      "The model routes it to Trust and Safety, with high confidence, and raises the urgent flag."),
+                      "The model routes it to Trust and Safety, with ninety six percent confidence, and raises the urgent "
+                      "flag, so the ticket waits for a support agent to approve it."),
              dict(say="Now a message in Tamil script, about an item missing from an order and a request for the money back. "
                       "It goes to Food Operations, with payment refund as the secondary issue. Confidence here is low, so the "
                       "ticket is flagged for human review. There is no translation step: character n-gram features let one "
                       "model read Sinhala, Tamil and English scripts directly."),
              dict(say="And finally an email, with a subject line. The customer's diabetic father is waiting on an insulin "
-                      "delivery and the rider's phone is off. Even though the email is written politely, the urgency model "
-                      "picks up that this needs immediate attention."),
+                      "delivery and the rider's phone is off. Even though the email is written politely, the model routes it "
+                      "to Delivery Operations with almost one hundred percent confidence, and flags it as urgent."),
          ]),
 
     dict(id="demo_ops", kind="live",
@@ -129,11 +131,28 @@ SCENES = [
              dict(say="The Batch workbench is the evaluation path in the dashboard. Up to one hundred tickets run "
                       "synchronously, through the predict batch endpoint. Here is the sample batch."),
              dict(say="The predictions come back in the same order as the request, each one echoing its ticket I D."),
-             dict(say="Now an evaluation-sized run. We paste three thousand tickets. Above one hundred tickets, the "
-                      "workbench switches to an asynchronous batch job: it submits, polls the job status, and fetches the "
-                      "results when the job has succeeded."),
-             dict(say="All three thousand predictions are back, in order, and can be downloaded as JSON in the same "
+             dict(say="Now a full synchronous batch: we paste one hundred tickets, the largest batch the predict batch "
+                      "endpoint accepts. Anything larger, up to five thousand tickets, becomes an asynchronous batch job, "
+                      "which we show through the API later in this video."),
+             dict(say="All one hundred predictions are back, in order, and can be downloaded as JSON in the same "
                       "format the judges receive from the API."),
+         ]),
+
+    dict(id="demo_mobile", kind="live", mobile=True,
+         kicker="Live demo · mobile",
+         title="The same desk, in your pocket",
+         items=["Same hosted site, no separate app", "Single-column layout for small screens",
+                "Full intake → prediction → routing flow", "tensorforge-phase2.vercel.app"],
+         beats=[
+             dict(say="Fresh Desk is also fully responsive. Here is the same hosted site on a phone. The header, "
+                      "navigation and landing page reflow into a single column, with nothing hidden away."),
+             dict(say="Support staff and customers can raise a ticket from their phone. This customer says the driver "
+                      "took a long route, charged them double, and wants a refund."),
+             dict(say="The full prediction fits the small screen: Ride Operations as the route, ride trip issue as the "
+                      "primary category, payment refund as the secondary issue, and standard priority. Confidence is above "
+                      "fifty percent, so the ticket is routed automatically."),
+             dict(say="Live operations and the Model lab work the same way on mobile, so a support lead can check the "
+                      "queue and the models from anywhere."),
          ]),
 
     # ---------------------------------------------------------------- 4. Training
@@ -245,8 +264,8 @@ SCENES = [
 
     dict(id="demo_models", kind="live",
          beats=[
-             dict(say="The Model lab page in the dashboard shows the same numbers, read directly from the loaded model "
-                      "artifact on the server: the three classifiers, their algorithms, their classes and their validation "
+             dict(say="The Model lab page in the dashboard reads its numbers directly from the model artifact loaded on "
+                      "the hosted server: the three classifiers, their algorithms, their classes and their validation "
                       "scores, together with the fixed routing table."),
          ]),
 
