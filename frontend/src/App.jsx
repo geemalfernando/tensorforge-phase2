@@ -17,7 +17,7 @@ const PAGE_COPY = {
   ops: ["Live operations", "Every route, in one view.", "Follow ticket routing and review work across your current session."],
   support: ["Support queue", "A thoughtful second look.", "Review urgent or uncertain predictions and accept tickets and confirm the support team."],
   batch: ["Batch workbench", "Thousands of tickets. One run.", "Run a few tickets or an entire evaluation job. Track progress and export every prediction."],
-  models: ["Model lab", "Meet the models.", "Inspect the three trained models, development scores, and the fixed support routes."],
+  models: ["Model lab", "Meet the models.", "Inspect the three trained models, held-out scores, and fixed support routes."],
 };
 
 function PageHero({ page }) {
@@ -258,8 +258,8 @@ export default function App() {
   }
   return (
     <FreshSurface className="app-surface min-h-screen">
-      <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-3 sm:px-6">
+      <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/95 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-3 py-3 sm:gap-4 sm:px-6">
           <a
             href="#"
             onClick={(e) => {
@@ -277,16 +277,17 @@ export default function App() {
             </span>
           </a>
           <nav
-            className="order-3 flex w-full gap-1 overflow-x-auto lg:order-none lg:w-auto lg:flex-1"
+            className="order-3 flex min-w-0 w-full snap-x gap-1 overflow-x-auto overscroll-x-contain pb-1 lg:order-none lg:w-auto lg:flex-1"
             aria-label="Workspace navigation"
           >
             {NAV.map(([id, icon, name]) => (
               <button
                 key={id}
                 onClick={() => navigate(id)}
-                className={`shrink-0 rounded-xl px-3 py-2 text-sm font-semibold transition ${page === id ? "bg-[#133d36] text-white shadow-[0_10px_24px_-14px_#133d36]" : "text-slate-500 hover:bg-[#e8f3ee] hover:text-[#133d36]"}`}
+                aria-current={page === id ? "page" : undefined}
+                className={`min-h-11 shrink-0 snap-start rounded-xl px-3 py-2 text-sm font-semibold transition ${page === id ? "bg-[#133d36] text-white shadow-[0_10px_24px_-14px_#133d36]" : "text-slate-500 hover:bg-[#e8f3ee] hover:text-[#133d36]"}`}
               >
-                <span className="mr-2">{icon}</span>
+                <span className="mr-2" aria-hidden="true">{icon}</span>
                 {name}
               </button>
             ))}
@@ -753,14 +754,13 @@ export default function App() {
                 Our own classifiers, loaded from disk
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-slate-500">
-                Trained on{" "}
-                {models?.training_examples?.toLocaleString() || "4,000"}{" "}
+                The final models were trained on{" "}
+                {models?.training_examples?.toLocaleString() || "4,800"}{" "}
                 synthetic RideEat tickets with word and character TF-IDF
-                features. The {models?.validation_examples || 800}-ticket
-                validation split is used for reporting. Configurations and
-                thresholds were compared on training and validation data.
-                These are development scores; the judges' unseen data is the
-                independent test.
+                features. Scores shown are from a separate, stratified 25%
+                test fold ({models?.validation_examples || 1000} tickets) held
+                out before the final refit. The judges' unseen data remains
+                the independent evaluation.
                 Predictions use all three classifiers, then enforce category
                 precedence and the fixed category-to-team map. Primary
                 confidence below 50% or very little message context recommends

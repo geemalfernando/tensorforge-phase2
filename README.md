@@ -53,6 +53,8 @@ The ResolveX-style workspace has five views: Ticket intake, Live operations, Sup
 
 The batch workbench loads JSON, processes 1–100 tickets synchronously or 101–5,000 asynchronously, polls progress, supports cancellation, and downloads all results. Its preview shows up to 100 rows. The model lab reads actual loaded classifier classes and saved validation metrics from the server.
 
+The dashboard is responsive down to 320px: workspace navigation scrolls horizontally on touch screens, and primary actions keep touch-friendly targets. The main views were checked at 320, 360, 390, 430, 768, and 1024px.
+
 The browser calls `/dashboard/api/...`; the server supplies its configured key internally. There is no API-key prompt or browser secret. Direct judging routes require the exact evaluation key. See [ResolveX adaptation details](docs/resolvex-adaptation.md) for source provenance and the three-model replacement.
 
 For frontend development, run `npm run dev --prefix frontend` alongside the API, and open the URL printed by Vite. Rebuild with `npm run build --prefix frontend` to update the UI served by FastAPI. Node is needed only to build the UI; Docker handles this in its build stage.
@@ -98,7 +100,31 @@ python scripts/compare_training.py --target category
 
 `scripts/train_model.py` makes a deterministic, category-stratified 75/25 split of `datasets/train.csv` (3,000 fit / 1,000 test examples), reports the untouched test-fold scores, then refits the deployable artifact on all 4,800 labeled tickets. It writes the split metadata and scores to `artifacts/evaluation_metrics.json` and `artifacts/evaluation_breakdown.json`. The executed notebooks [retrain_75_25.ipynb](notebooks/retrain_75_25.ipynb) and [final_model_release.ipynb](notebooks/final_model_release.ipynb) include the evaluation, model rationale, per-class/per-language diagnostics, visual confusion matrices, and delivery-delay/lost-property checks. `configs/training.json` freezes the selected configuration and thresholds.
 
-Held-out accuracy / macro-F1: category **99.00% / 98.92%**, secondary category **99.80% / 98.84%**, urgency **99.90% / 99.71%**. The 75/25 test fold is held out from fitting and comes from the training CSV; the validation CSV is not scored and is added only for the final refit. These high scores measure this synthetic dataset only and do not guarantee results on real or judge-provided tickets.
+Regenerate the README figures from those saved metrics with `python scripts/export_release_visuals.py`.
+
+### Final model release: `tf-phase2-drive-2.1.0`
+
+The evaluation uses an untouched, stratified **25% test fold from `train.csv`** (3,000 fit / 1,000 test, seed 42). The supplied validation CSV is not used to produce these scores; after evaluation, the deployable model is refit on all 4,800 labeled tickets.
+
+| Prediction target | Accuracy | Macro-F1 |
+| --- | ---: | ---: |
+| Primary category | **99.00%** | **98.92%** |
+| Secondary category | **99.80%** | **98.84%** |
+| Urgency | **99.90%** | **99.71%** |
+
+![Accuracy and macro-F1 on the held-out fold](docs/model-release-v2.1.0/holdout-scores.png)
+
+Primary-category accuracy by language: English **98.31%** (356 tickets), mixed **100.00%** (23), Sinhala **100.00%** (198), Singlish **99.61%** (255), Tamil **100.00%** (146), and Tanglish **86.36%** (22). The smaller language groups have substantial uncertainty.
+
+![Held-out primary-category accuracy and macro-F1 by language](docs/model-release-v2.1.0/language-scores.png)
+
+On the held-out fold, **150/150** delivery-delay tickets were routed correctly, with **0** routed to Lost & Found. Of 50 personal lost-property tickets, 48 were classified correctly and one was predicted as delivery delay.
+
+![Lost-property and delivery-delay confusion counts](docs/model-release-v2.1.0/delay-lost-confusion.png)
+
+![Full primary-category confusion matrix](docs/model-release-v2.1.0/category-confusion.png)
+
+The complete [final model release notebook](notebooks/final_model_release.ipynb) documents all class-level precision, recall, F1, support, confusion matrices, model rationale, and limitations. These scores measure synthetic workshop examples only; they do not guarantee performance on real customer messages or judge-provided tickets.
 
 Primary confidence below 0.5 or a message with three or fewer words recommends human review. Ambiguous messages such as `badu nati una` still require clarification about whether personal belongings or food-order contents are missing. Review decisions never alter the raw API prediction. Primary confidence has not been independently calibrated.
 
