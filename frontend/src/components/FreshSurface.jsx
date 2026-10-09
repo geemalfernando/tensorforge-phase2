@@ -86,3 +86,23 @@ export default function FreshSurface({children,className=''}) {
   {children}
  </div>;
 }
+
+// Brand mark: a gradient "f" stroke with an orbiting spark inside a glowing tile.
+export function FreshMark({size=40}) {
+ return <span className="fresh-logo" style={{width:size,height:size}} aria-hidden="true">
+  <svg viewBox="0 0 48 48" width="100%" height="100%">
+   <defs>
+    <linearGradient id="fm-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#164e45"/><stop offset=".55" stopColor="#0b2e2a"/><stop offset="1" stopColor="#05161a"/></linearGradient>
+    <linearGradient id="fm-ink" x1="14" y1="10" x2="30" y2="38" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#d9f99d"/><stop offset=".5" stopColor="#bef264"/><stop offset="1" stopColor="#2dd4bf"/></linearGradient>
+    <radialGradient id="fm-glow" cx=".3" cy=".2" r=".9"><stop offset="0" stopColor="#5eead4" stopOpacity=".35"/><stop offset="1" stopColor="#5eead4" stopOpacity="0"/></radialGradient>
+   </defs>
+   <rect width="48" height="48" rx="14" fill="url(#fm-bg)"/>
+   <rect width="48" height="48" rx="14" fill="url(#fm-glow)"/>
+   <g className="fm-orbit"><ellipse cx="24" cy="24" rx="19" ry="9" fill="none" stroke="#5eead4" strokeOpacity=".28" strokeDasharray="2 3" transform="rotate(-28 24 24)"/></g>
+   <path d="M28.5 12.5c-4.6-1.2-8.2.6-8.2 5.6V36" fill="none" stroke="url(#fm-ink)" strokeWidth="4.6" strokeLinecap="round"/>
+   <path d="M15 22.5h11.5" stroke="url(#fm-ink)" strokeWidth="4.2" strokeLinecap="round"/>
+   <path className="fm-spark" d="M35 25.5l1.3 3.2 3.2 1.3-3.2 1.3-1.3 3.2-1.3-3.2-3.2-1.3 3.2-1.3z" fill="#5eead4"/>
+   <circle className="fm-dot" cx="36" cy="14" r="1.6" fill="#d9f99d"/>
+  </svg>
+ </span>;
+}

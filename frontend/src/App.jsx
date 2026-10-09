@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { api, label, download, sessionRequest, serviceRequest } from "./lib/api";
 import TicketPanel from "./components/TicketPanel";
 import Landing from "./components/Landing";
-import FreshSurface, { Count, Words } from "./components/FreshSurface";
+import FreshSurface, { Count, FreshMark, Words } from "./components/FreshSurface";
 
 const NAV = [
   ["home", "⌂", "Home"],
@@ -268,9 +268,7 @@ export default function App() {
             }}
             className="flex items-center gap-2"
           >
-            <span className="fresh-logo">
-              f<span>✳</span>
-            </span>
+            <FreshMark />
             <span className="font-black tracking-tight">
               Fresh Desk
               <span className="block text-[10px] font-semibold uppercase tracking-widest text-teal-700">
