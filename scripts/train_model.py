@@ -133,6 +133,17 @@ def _summarize_holdout(tickets, categories, secondary, urgent, artifact):
                 actual['category'], predicted['category'], labels=labels
             ).tolist(),
         },
+        'confusion_matrices': {
+            target: {
+                'labels': sorted(set(actual[target]) | set(predicted[target])),
+                'rows_actual_columns_predicted': confusion_matrix(
+                    actual[target],
+                    predicted[target],
+                    labels=sorted(set(actual[target]) | set(predicted[target])),
+                ).tolist(),
+            }
+            for target in actual
+        },
         'category_by_language': language_scores,
         'top_category_confusions': [
             {'actual': truth, 'predicted': guess, 'count': count}
@@ -230,6 +241,7 @@ def run_training(
         'classification_reports': summary['classification_reports'],
         'category_report': summary['category_report'],
         'category_confusion_matrix': summary['category_confusion_matrix'],
+        'confusion_matrices': summary['confusion_matrices'],
         'category_by_language': summary['category_by_language'],
         'top_category_confusions': summary['top_category_confusions'],
         'thresholds': {
@@ -250,7 +262,7 @@ def run_training(
         for key in (
             'model_version', 'evaluation_note', 'evaluation_split',
             'validation', 'classification_reports', 'category_report',
-            'category_confusion_matrix', 'category_by_language',
+            'category_confusion_matrix', 'confusion_matrices', 'category_by_language',
             'top_category_confusions',
         )
     }
