@@ -1,10 +1,12 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+const deployedOnVercel = process.env.VERCEL === "1";
+
 export default defineConfig({
   plugins: [react()],
-  base: "/static/ui/",
+  base: deployedOnVercel ? "/" : "/static/ui/",
   build: {
-    outDir: "../app/static/ui",
+    outDir: deployedOnVercel ? "dist" : "../app/static/ui",
     emptyOutDir: true,
   },
   server: {

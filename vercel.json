@@ -1,15 +1,42 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm ci --prefix frontend && npm run build --prefix frontend",
-  "installCommand": "pip install -r requirements.txt",
-  "functions": {
-    "app/main.py": {
-      "maxDuration": 300,
-      "excludeFiles": "{tests/**,datasets/**,scripts/**,frontend/node_modules/**,video/**,deploy/**}"
+  "services": {
+    "frontend": {
+      "root": "frontend/",
+      "framework": "vite",
+      "installCommand": "npm ci",
+      "buildCommand": "npm run build",
+      "outputDirectory": "dist"
     },
-    "app/batch_worker.py": {
-      "maxDuration": 300,
-      "excludeFiles": "{tests/**,datasets/**,scripts/**,frontend/node_modules/**,video/**,deploy/**}"
+    "app": {
+      "root": ".",
+      "framework": "fastapi",
+      "entrypoint": "app.main:app",
+      "installCommand": "pip install -r requirements.txt",
+      "functions": {
+        "app/main.py": {
+          "maxDuration": 300,
+          "excludeFiles": "{tests/**,datasets/**,scripts/**,frontend/node_modules/**,video/**,deploy/**}"
+        },
+        "app/batch_worker.py": {
+          "maxDuration": 300,
+          "excludeFiles": "{tests/**,datasets/**,scripts/**,frontend/node_modules/**,video/**,deploy/**}"
+        }
+      }
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/(health|auth|predict|batch|dashboard|tickets|docs|openapi.json|redoc)(.*)",
+      "destination": {
+        "service": "app"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "frontend"
+      }
+    }
+  ]
 }
