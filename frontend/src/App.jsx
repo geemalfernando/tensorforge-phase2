@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { api, label, download, sessionRequest, serviceRequest } from "./lib/api";
 import TicketPanel from "./components/TicketPanel";
 import Landing from "./components/Landing";
+import JudgeDemo from "./components/JudgeDemo";
 import FreshSurface, { Count, FreshMark, Words } from "./components/FreshSurface";
 
 const NAV = [
@@ -11,6 +12,7 @@ const NAV = [
   ["support", "◇", "Support queue"],
   ["batch", "▤", "Batch workbench"],
   ["models", "⌁", "Model lab"],
+  ["demo", "⚖", "Judge demo"],
 ];
 const PAGE_COPY = {
   intake: ["Ticket intake", "Every ticket. The right team.", "From customer message to a clear route. Three locally trained models identify the issue, the second concern, and the need for urgent attention."],
@@ -18,6 +20,7 @@ const PAGE_COPY = {
   support: ["Support queue", "A thoughtful second look.", "Review urgent or uncertain predictions and accept tickets and confirm the support team."],
   batch: ["Batch workbench", "Thousands of tickets. One run.", "Run a few tickets or an entire evaluation job. Track progress and export every prediction."],
   models: ["Model lab", "Meet the models.", "Inspect the three trained models, held-out scores, and fixed support routes."],
+  demo: ["Judge demo", "Test the evaluation API.", "Authenticate with your evaluation key, then exercise the hosted API endpoints from this console."],
 };
 
 function PageHero({ page }) {
@@ -69,6 +72,7 @@ export default function App() {
     [health, setHealth] = useState(null),
     [access, setAccess] = useState(false),
     [models, setModels] = useState(null);
+  const [judgeApiKey, setJudgeApiKey] = useState("");
   const [records, setRecords] = useState([]),
     [selectedId, setSelectedId] = useState(null),
     [busy, setBusy] = useState(false),
@@ -292,7 +296,9 @@ export default function App() {
               </button>
             ))}
           </nav>
-          <span className="status-pill">{role === "support" ? "Support role" : "Customer role"}</span>
+          <span className="status-pill">
+            {judgeApiKey ? "Judge session" : role === "support" ? "Support role" : "Customer role"}
+          </span>
           {role === "support" && <button className="text-xs font-semibold" onClick={signOut}>Sign out</button>}
           <span
             role="status"
@@ -323,6 +329,13 @@ export default function App() {
         )}
         {page === "home" ? <Landing onStart={()=>navigate("intake")} onModels={()=>navigate("models")} onSupport={()=>navigate("support")}/> : <div key={page} className="fresh-page space-y-6">
         <PageHero page={page} />
+        {page === "demo" ? (
+          <JudgeDemo
+            apiKey={judgeApiKey}
+            onAuthorize={setJudgeApiKey}
+            onClear={() => setJudgeApiKey("")}
+          />
+        ) : <>
         <section
           className="grid grid-cols-2 gap-3 lg:grid-cols-4"
           aria-label="Session activity"
@@ -789,6 +802,7 @@ export default function App() {
             </section>
           </>
         )}
+        </>}
         </div>}
         <footer className="flex flex-wrap justify-between gap-3 border-t py-4 text-xs text-slate-400">
           <span>Fresh Desk · TensorForge Phase 2</span>

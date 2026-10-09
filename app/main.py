@@ -583,6 +583,8 @@ async def dashboard_cors(request: Request, call_next):
             "content-type",
             "idempotency-key",
             "x-request-id",
+            "x-api-key",
+            "authorization",
             "x-tensorforge-dashboard",
         }
         requested_method = request.headers["access-control-request-method"].upper()
@@ -608,7 +610,8 @@ async def dashboard_cors(request: Request, call_next):
     response.headers["Access-Control-Allow-Credentials"] = "true"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, DELETE, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = (
-        "Content-Type, Idempotency-Key, X-Request-ID, X-TensorForge-Dashboard"
+        "Authorization, Content-Type, Idempotency-Key, X-API-Key, X-Request-ID, "
+        "X-TensorForge-Dashboard"
     )
     response.headers["Access-Control-Expose-Headers"] = "Location, Retry-After, X-Request-ID"
     response.headers["Access-Control-Max-Age"] = "600"

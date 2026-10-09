@@ -31,12 +31,16 @@ def test_vercel_origin_cors_and_dashboard_api_proxy(client, monkeypatch):
         headers={
             "Origin": origin,
             "Access-Control-Request-Method": "POST",
-            "Access-Control-Request-Headers": "content-type,x-tensorforge-dashboard",
+            "Access-Control-Request-Headers": (
+                "authorization,content-type,x-api-key,x-tensorforge-dashboard"
+            ),
         },
     )
     assert preflight.status_code == 204
     assert preflight.headers["access-control-allow-origin"] == origin
     assert preflight.headers["access-control-allow-credentials"] == "true"
+    assert "x-api-key" in preflight.headers["access-control-allow-headers"].lower()
+    assert "authorization" in preflight.headers["access-control-allow-headers"].lower()
 
     prediction = client.post(
         "/dashboard/api/predict",
