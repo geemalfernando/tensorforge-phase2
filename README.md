@@ -8,6 +8,8 @@ A multilingual RideEat support-ticket classifier, API, and React dashboard adapt
 - **Authenticated batch inference:** `POST https://tensorforge-phase2.vercel.app/predict/batch`
 - **API specification:** [OpenAPI 2.1.0 JSON](https://tensorforge-phase2.vercel.app/openapi.json) · [interactive API docs](https://tensorforge-phase2.vercel.app/docs)
 
+- Support Password -WUlRtWIkLdWPLbdb9Y2Kgx_T8Rg-xTGi
+
 For interactive evaluation, open the live site and click **Judge demo** in the workspace navigation. Enter the evaluation API key in the UI; the demo verifies it with `POST /auth/verify` before it reveals the test controls. A valid key unlocks controls for `GET /health`, `POST /auth/verify`, `POST /predict`, `POST /predict/batch`, and the full async job flow (`POST /batch/jobs`, poll status, fetch paged results, and cancel/discard). The key stays in page memory only, is not written to browser storage, and can be cleared with **Sign out & clear key**.
 
 Batch inference requires the organizer-issued key in `X-API-Key` or `Authorization: Bearer <team-key>`. It accepts 1–100 tickets and returns HTTP `200`; missing or invalid credentials return HTTP `401` in the specified JSON error format. Send the contract-shaped body:
