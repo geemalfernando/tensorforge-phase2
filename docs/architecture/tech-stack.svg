@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 640" width="1200" height="640" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <style>
+      .lt{font-size:15px;font-weight:700;fill:#0f172a}
+      .ls{font-size:11.5px;fill:#475569}
+      .cn{font-size:13.5px;font-weight:700;fill:#0f172a}
+      .cv{font-size:11px;fill:#475569}
+    </style>
+  </defs>
+  <rect width="1200" height="640" fill="#ffffff"/>
+
+  <!-- Row 1: Frontend -->
+  <rect x="20" y="20" width="1160" height="88" rx="12" fill="#eef2ff" stroke="#6366f1"/>
+  <text x="40" y="56" class="lt">Frontend</text>
+  <text x="40" y="76" class="ls">Dashboard + Judge demo</text>
+  <g transform="translate(230,36)">
+    <rect width="170" height="56" rx="8" fill="#fff" stroke="#a5b4fc"/><text x="14" y="24" class="cn">React</text><text x="14" y="42" class="cv">18.3.1 · UI components</text>
+    <rect x="184" width="170" height="56" rx="8" fill="#fff" stroke="#a5b4fc"/><text x="198" y="24" class="cn">Vite</text><text x="198" y="42" class="cv">5.4 · build + dev server</text>
+    <rect x="368" width="170" height="56" rx="8" fill="#fff" stroke="#a5b4fc"/><text x="382" y="24" class="cn">Tailwind CSS</text><text x="382" y="42" class="cv">3.4 · responsive styling</text>
+    <rect x="552" width="170" height="56" rx="8" fill="#fff" stroke="#a5b4fc"/><text x="566" y="24" class="cn">PostCSS</text><text x="566" y="42" class="cv">8.4 · autoprefixer</text>
+    <rect x="736" width="194" height="56" rx="8" fill="#fff" stroke="#a5b4fc"/><text x="750" y="24" class="cn">Fetch API client</text><text x="750" y="42" class="cv">src/lib/api.js</text>
+  </g>
+
+  <!-- Row 2: API -->
+  <rect x="20" y="122" width="1160" height="88" rx="12" fill="#ecfeff" stroke="#0891b2"/>
+  <text x="40" y="158" class="lt">API service</text>
+  <text x="40" y="178" class="ls">Python 3.11 / 3.12</text>
+  <g transform="translate(230,138)">
+    <rect width="170" height="56" rx="8" fill="#fff" stroke="#67e8f9"/><text x="14" y="24" class="cn">FastAPI</text><text x="14" y="42" class="cv">0.115 · routes, validation</text>
+    <rect x="184" width="170" height="56" rx="8" fill="#fff" stroke="#67e8f9"/><text x="198" y="24" class="cn">Uvicorn</text><text x="198" y="42" class="cv">0.33 · ASGI server</text>
+    <rect x="368" width="170" height="56" rx="8" fill="#fff" stroke="#67e8f9"/><text x="382" y="24" class="cn">OpenAPI 2.1.0</text><text x="382" y="42" class="cv">organizer contract</text>
+    <rect x="552" width="170" height="56" rx="8" fill="#fff" stroke="#67e8f9"/><text x="566" y="24" class="cn">Vercel Queues</text><text x="566" y="42" class="cv">vercel-queue 0.9 · jobs</text>
+    <rect x="736" width="194" height="56" rx="8" fill="#fff" stroke="#67e8f9"/><text x="750" y="24" class="cn">python-dotenv</text><text x="750" y="42" class="cv">1.0 · local secrets</text>
+  </g>
+
+  <!-- Row 3: ML -->
+  <rect x="20" y="224" width="1160" height="88" rx="12" fill="#f0fdf4" stroke="#16a34a"/>
+  <text x="40" y="260" class="lt">Machine learning</text>
+  <text x="40" y="280" class="ls">CPU only, no LLM</text>
+  <g transform="translate(230,240)">
+    <rect width="170" height="56" rx="8" fill="#fff" stroke="#86efac"/><text x="14" y="24" class="cn">scikit-learn</text><text x="14" y="42" class="cv">1.3.2 · TF-IDF, LR, SVM</text>
+    <rect x="184" width="170" height="56" rx="8" fill="#fff" stroke="#86efac"/><text x="198" y="24" class="cn">NumPy / SciPy</text><text x="198" y="42" class="cv">1.26 / 1.13 · sparse math</text>
+    <rect x="368" width="170" height="56" rx="8" fill="#fff" stroke="#86efac"/><text x="382" y="24" class="cn">joblib</text><text x="382" y="42" class="cv">1.4 · model artifact</text>
+    <rect x="552" width="170" height="56" rx="8" fill="#fff" stroke="#86efac"/><text x="566" y="24" class="cn">pandas</text><text x="566" y="42" class="cv">2.2 · training data</text>
+    <rect x="736" width="194" height="56" rx="8" fill="#fff" stroke="#86efac"/><text x="750" y="24" class="cn">Jupyter + matplotlib</text><text x="750" y="42" class="cv">evaluation report, charts</text>
+  </g>
+
+  <!-- Row 4: Data -->
+  <rect x="20" y="326" width="1160" height="88" rx="12" fill="#fff7ed" stroke="#ea580c"/>
+  <text x="40" y="362" class="lt">Data</text>
+  <text x="40" y="382" class="ls">jobs, sessions, tickets</text>
+  <g transform="translate(230,342)">
+    <rect width="170" height="56" rx="8" fill="#fff" stroke="#fdba74"/><text x="14" y="24" class="cn">SQLite</text><text x="14" y="42" class="cv">default · single container</text>
+    <rect x="184" width="170" height="56" rx="8" fill="#fff" stroke="#fdba74"/><text x="198" y="24" class="cn">PostgreSQL</text><text x="198" y="42" class="cv">Docker Compose stack</text>
+    <rect x="368" width="170" height="56" rx="8" fill="#fff" stroke="#fdba74"/><text x="382" y="24" class="cn">Supabase</text><text x="382" y="42" class="cv">hosted Postgres pooler</text>
+    <rect x="552" width="170" height="56" rx="8" fill="#fff" stroke="#fdba74"/><text x="566" y="24" class="cn">psycopg</text><text x="566" y="42" class="cv">3.2 · Postgres driver</text>
+    <rect x="736" width="194" height="56" rx="8" fill="#fff" stroke="#fdba74"/><text x="750" y="24" class="cn">CSV / JSONL datasets</text><text x="750" y="42" class="cv">4,800 labeled tickets</text>
+  </g>
+
+  <!-- Row 5: Infra -->
+  <rect x="20" y="428" width="1160" height="88" rx="12" fill="#f1f5f9" stroke="#64748b"/>
+  <text x="40" y="464" class="lt">Hosting + delivery</text>
+  <text x="40" y="484" class="ls">live + offline paths</text>
+  <g transform="translate(230,444)">
+    <rect width="170" height="56" rx="8" fill="#fff" stroke="#cbd5e1"/><text x="14" y="24" class="cn">Vercel</text><text x="14" y="42" class="cv">Services: Vite + FastAPI</text>
+    <rect x="184" width="170" height="56" rx="8" fill="#fff" stroke="#cbd5e1"/><text x="198" y="24" class="cn">Docker</text><text x="198" y="42" class="cv">multi-stage, Node 20 → Py</text>
+    <rect x="368" width="170" height="56" rx="8" fill="#fff" stroke="#cbd5e1"/><text x="382" y="24" class="cn">Docker Compose</text><text x="382" y="42" class="cv">app + Postgres, 1 command</text>
+    <rect x="552" width="170" height="56" rx="8" fill="#fff" stroke="#cbd5e1"/><text x="566" y="24" class="cn">GitHub Actions</text><text x="566" y="42" class="cv">verify + GHCR publish</text>
+    <rect x="736" width="194" height="56" rx="8" fill="#fff" stroke="#cbd5e1"/><text x="750" y="24" class="cn">Caddy (Oracle option)</text><text x="750" y="42" class="cv">TLS reverse proxy template</text>
+  </g>
+
+  <!-- Row 6: Quality -->
+  <rect x="20" y="530" width="1160" height="88" rx="12" fill="#faf5ff" stroke="#9333ea"/>
+  <text x="40" y="566" class="lt">Testing + QA</text>
+  <text x="40" y="586" class="ls">47 automated tests</text>
+  <g transform="translate(230,546)">
+    <rect width="170" height="56" rx="8" fill="#fff" stroke="#d8b4fe"/><text x="14" y="24" class="cn">pytest + httpx</text><text x="14" y="42" class="cv">8.3 · API + contract tests</text>
+    <rect x="184" width="170" height="56" rx="8" fill="#fff" stroke="#d8b4fe"/><text x="198" y="24" class="cn">jsonschema</text><text x="198" y="42" class="cv">4.19 · draft-2020-12</text>
+    <rect x="368" width="170" height="56" rx="8" fill="#fff" stroke="#d8b4fe"/><text x="382" y="24" class="cn">Playwright</text><text x="382" y="42" class="cv">1.63 · dashboard checks</text>
+    <rect x="552" width="170" height="56" rx="8" fill="#fff" stroke="#d8b4fe"/><text x="566" y="24" class="cn">Postman / Newman</text><text x="566" y="42" class="cv">judge-style collection</text>
+    <rect x="736" width="194" height="56" rx="8" fill="#fff" stroke="#d8b4fe"/><text x="750" y="24" class="cn">Verify scripts</text><text x="750" y="42" class="cv">container + endpoint smoke</text>
+  </g>
+</svg>

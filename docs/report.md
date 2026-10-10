@@ -1,51 +1,130 @@
-# TensorForge 2.0 — Phase 2 report draft
+# TensorForge 2.0 — Phase 2 Report
 
-**Submission status:** local prototype with supplied OpenAPI checks and offline container verification. Public hosting, reference-hardware checks, and video recording are pending. Exact organizer JSON Schemas downloaded from Drive are checked locally. Update this draft with final deployment evidence.
+**Team:** TF-T03 · Byte Benders  
+**Live demo:** <https://tensorforge-phase2.vercel.app/> · **API docs:** <https://tensorforge-phase2.vercel.app/docs>  
+**Model artifact:** `tf-phase2-drive-2.1.0` · **API contract:** OpenAPI 2.1.0 (organizer-supplied)  
+**Report updated:** 10 October 2026
 
 ## 1. Problem and solution
 
-RideEat support messages arrive through chat, email, and call transcripts in English, Sinhala, Tamil, transliterated text, and mixed scripts. The prototype predicts a primary issue category, optional secondary issue, urgency, and support team. A React dashboard adapted from ResolveX supports intake, live operations, support review, model inspection, and JSON batches; the service also exposes synchronous and asynchronous evaluation APIs.
+RideEat support messages arrive by chat, email, and call transcript. They are written in English, Sinhala, Tamil, transliterated Singlish/Tanglish, and mixed scripts. For each ticket, our system predicts:
 
-Classification runs locally using trained TF-IDF pipelines with logistic regression and a calibrated linear SVM. No LLM, remote model, model download, or paid inference API is used at runtime. The evaluation API key authenticates requests to our own service; it is not a model-provider credential.
+- a primary issue category (11 classes),
+- an optional secondary issue,
+- whether the ticket is urgent,
+- the responsible support team.
 
-## 2. Architecture and design decisions
+Predictions are served through an authenticated evaluation API and a React support dashboard adapted from our ResolveX system. The dashboard covers ticket intake, live operations, the support review queue, the batch workbench, the model lab, and the Judge demo.
 
-FastAPI serves the dashboard, public `/health`, and protected prediction/job endpoints. The configured `API_KEY` is compared with the supplied `X-API-Key` or bearer token using a constant-time comparison. A missing configuration denies protected access. The regular dashboard uses a same-origin server bridge that supplies the configured key internally, so it never sends that server key to the browser. The separate Judge demo asks the evaluator to enter their own key, verifies it through `/auth/verify`, and keeps it in page memory only for direct endpoint calls; it is not saved to browser storage and is cleared on sign-out. Deployment must preserve the judges' exact supplied key throughout evaluation.
+Classification uses locally trained TF-IDF pipelines with logistic regression and a calibrated linear SVM. At runtime there is no LLM, no remote model, no model download, and no paid inference API. The evaluation API key authenticates callers to our own service; it is not a model-provider credential.
 
-The service validates requests before inference, preserves batch ordering, and echoes supplied ticket IDs. Synchronous batches support 1–100 tickets. The supplied v2.1.0 contract confirms that async jobs accept 1–5,000 tickets, including the large evaluation range above 2,000. CPU-bound synchronous inference runs in a thread pool so it does not directly block the HTTP event loop.
+## 2. System architecture
 
-SQLite persists job state and results. One worker processes jobs in chunks of 100; at most four jobs are active or queued. The API supports status polling, pageable results, idempotency keys, cancellation/discard, and 24-hour retention checked when results are accessed. Interrupted jobs are marked failed after a restart. Run one API process per job store and mount persistent storage for hosting. Queue limits return a retryable response rather than allowing unbounded job submissions.
+![TensorForge system architecture](architecture/system-architecture.png)
 
-The container builds the React UI in a Node stage, copies the compiled UI and pre-trained artifact, and installs dependencies at build time. Its startup command serves port 8000. The built image became reachable through a published port in 1.414 seconds. A second container with networking disabled passed health, authenticated single prediction, a 100-ticket synchronous batch, and a 2,001-ticket async job. The image contains the model and supplied OpenAPI document; it excludes `.env`. These checks used Docker Desktop, not the organizers' reference hardware.
+**Clients.** The dashboard calls a same-origin bridge (`/dashboard/api/...`), and the server adds its configured key internally, so the key never reaches the browser. The Judge demo asks the evaluator to enter their own key and verifies it with `POST /auth/verify`. The key is kept in page memory only and is cleared on sign-out. Postman, curl, and our scripts call the evaluation API directly.
+
+**Routing.** The hosted deployment is one Vercel project with two services. Rewrites send `/health`, `/auth`, `/predict`, `/batch`, `/dashboard`, and `/docs` to FastAPI, and all other paths to the static Vite build. The Docker image serves both from one process on port 8000.
+
+**API layer** (`app/main.py`). Protected routes accept `X-API-Key` or `Authorization: Bearer`, and the key is compared in constant time. If no key is configured, protected access is denied. Requests are validated against the supplied contract before inference, and errors use the specified JSON format. `/predict` and `/predict/batch` (1–100 tickets) run CPU-bound inference in a thread pool so the event loop stays free. Batch output keeps the input order and echoes ticket IDs.
+
+**Async jobs** (`app/jobs.py`). `POST /batch/jobs` accepts 1–5,000 tickets and enforces a 25 MB request limit. Jobs support:
+
+- idempotency keys,
+- a limit of four active jobs, with a retryable error when the queue is full,
+- status polling and pageable results,
+- cancellation and discard,
+- 24-hour result retention.
+
+Jobs are processed in chunks of 100 tickets. Locally and in Docker, an in-process background worker does this work. On Vercel, the API publishes the job ID to the `tensorforge-batch-jobs` queue, and the `app/batch_worker.py` subscriber processes it. Jobs interrupted by a restart are marked failed.
+
+**Model** (`artifacts/model.joblib`). The model is loaded once at startup. Preprocessing builds features from the channel, the optional language hint, the subject, and the text. It applies Unicode NFC normalization, masks synthetic reference IDs, and strips quoted past correspondence. Three pipelines then predict the primary category, the secondary category, and urgency. Narrow precedence rules and a fixed category→team map produce the final, contract-shaped prediction.
+
+**Persistence** (`app/database.py`). Three tables (`jobs`, `dashboard_sessions`, `support_tickets`) live in SQLite by default. When `DATABASE_URL` is set, PostgreSQL is used instead: Docker Compose locally, or the Supabase transaction pooler when hosted. The API and the queue worker share the same database, so job state survives cold starts.
+
+**Packaging.** A multi-stage Dockerfile builds the React UI in a Node stage. It then copies the compiled UI, the trained artifact, and the OpenAPI document into a Python image. `.env` is excluded from the image. `docker run -p 8000:8000 -e API_KEY ... tensorforge-mvp` starts the full system. `docker compose up` adds a persistent Postgres database.
+
+**Technology stack.** Each layer of the system uses the following technologies. Versions are pinned in `requirements.txt` and `frontend/package.json`.
+
+<img src="architecture/tech-stack.png" alt="TensorForge technology stack" style="width:88%;display:block;margin:4px auto">
 
 ## 3. Training and development
 
-The supplied dataset has 4,000 training examples and 800 validation examples. Input features include channel, optional language, subject, and message text; ticket IDs are excluded. Language is passed as an optional hint at inference. Text is normalized to Unicode NFC. Word 1–2 grams capture lexical phrases while character n-grams support scripts, spelling variants, and transliteration.
+The organizer dataset has 4,000 training and 800 validation tickets. We downloaded it from Drive and verified it against our local copy; checksums are recorded in `datasets/source_manifest.json`. Ticket IDs are excluded from the features, and the language hint is optional at inference. Word 1–2 grams capture lexical phrases. Character n-grams handle different scripts, spelling variants, and transliteration.
 
-All three pipelines were fitted afresh on the downloaded Drive CSVs, which are byte-for-byte identical to the previous local dataset. Checksums and archive provenance are saved. A first candidate selected on an internal training split reduced validation category accuracy to 60.88%; it was rejected. Further development comparisons are retained in `artifacts/training_experiments.json`; the selected settings are frozen in `configs/training.json`.
+| Target | Estimator | Key settings |
+| --- | --- | --- |
+| Primary category | Logistic regression, balanced | `C=100`, word 1–2 + boundary-aware char 2–6 grams |
+| Secondary category | Linear SVM, 3-fold sigmoid calibration | `C=1`, char 2–6 grams, cutoff 0.2 |
+| Urgency | Logistic regression, balanced | `C=40`, char 2–5 grams, cutoff 0.3 |
 
-Primary category uses balanced logistic regression with `C=100`, word 1–2 and boundary-aware character 2–6 grams. Secondary category uses a linear SVM (`C=1`) with three-fold sigmoid calibration. Urgency uses balanced logistic regression (`C=40`). Secondary/urgency preprocessing normalizes spacing, masks synthetic references and removes explicitly quoted past correspondence. Secondary and urgency cutoffs are 0.2 and 0.3. Narrow precedence rules and the fixed routing map enforce competition semantics. Every pipeline is trained with seed 42.
+All pipelines use seed 42, and the selected settings are frozen in `configs/training.json`. One early candidate was selected on an internal split, but it reduced validation category accuracy to 60.88%, so we rejected it. All development comparisons are kept in `artifacts/training_experiments.json`.
 
-Reproduce the held-out evaluation and final refit with `python scripts/train_model.py` or set `RETRAIN = True` in `notebooks/tensorforge_model_report.ipynb` and run it. The deterministic split takes 75% of `train.csv` for fitting and 25% for testing, stratified by primary category. The existing `validation.csv` is not used for the test score; it is included with `train.csv` only when refitting the final deployment artifact. The notebook shows scores, per-class metrics, language breakdowns, and visual diagnostics.
+`python scripts/train_model.py` reproduces the full training run:
 
-**Evaluation limitation:** the held-out results below measure only this synthetic workshop dataset. The judges' unseen holdout remains the independent evaluation. Sinhala/Tamil content has not received independent native-speaker review; strong dataset scores do not establish real-world reliability.
+1. It makes a deterministic split of `train.csv`, stratified by category: 75% for fitting (3,000) and 25% held out for testing (1,000).
+2. It scores the held-out fold. `validation.csv` is never used for this test score.
+3. It refits the deployable artifact on all 4,800 labeled tickets.
+
+The notebook `notebooks/tensorforge_model_report.ipynb` (PDF: `docs/tensorforge-model-report.pdf`) shows per-class metrics, language breakdowns, and confusion matrices.
 
 ## 4. Evaluation and findings
 
-Current artifact: `tf-phase2-drive-2.1.0`.
+Held-out 25% test fold of `train.csv` (1,000 tickets):
 
-| Output | 25% test accuracy | Macro-F1 |
+| Output | Accuracy | Macro-F1 |
 | --- | ---: | ---: |
 | Primary category | 99.00% | 98.92% |
 | Secondary category | 99.80% | 98.84% |
 | Urgency | 99.90% | 99.71% |
 
-In the held-out fold, the model correctly classified all 150 `delivery_delay` tickets, with no `delivery_delay` → `lost_item` errors; 48 of 50 `lost_item` tickets were correct, with one predicted as `delivery_delay`. The notebook also checks clear delayed-order and left-property examples. Confidence below 0.5 or three or fewer message words triggers a human-review recommendation. Ambiguous short messages still need clarification. Confidence is the model probability for the returned primary label, including after any rule override; it is not independently calibrated.
+**Delivery delay vs. lost property.** All 150 `delivery_delay` tickets were classified correctly, and none was routed to Lost & Found. Of the 50 `lost_item` tickets, 48 were correct and one was predicted as `delivery_delay`.
 
-Automated API tests exercise authorization on prediction/job routes, input errors, output structure, issue precedence, ordering, idempotency, job status, pagination, and deletion. Contract tests validate responses against the supplied schemas. The local full test run after retraining passed 46 tests; one Vercel Queue SDK integration test was deselected because that dependency is unavailable in the current Python 3.8 environment. Public-host verification remains pending.
+**Primary-category accuracy by language:**
 
-Held-out primary-category accuracy by language: English 98.31% (356 tickets), mixed 100% (23), Sinhala 100% (198), Singlish 99.61% (255), Tamil 100% (146), and Tanglish 86.36% (22). The small groups, particularly mixed and Tanglish, have substantial uncertainty. These synthetic-data results do not establish real-world reliability.
+| Language | Accuracy | Tickets |
+| --- | ---: | ---: |
+| English | 98.31% | 356 |
+| Mixed | 100% | 23 |
+| Sinhala | 100% | 198 |
+| Singlish | 99.61% | 255 |
+| Tamil | 100% | 146 |
+| Tanglish | 86.36% | 22 |
 
-## 5. Submission and operational plan
+The mixed and Tanglish groups are small, so these figures are highly uncertain.
 
-Before submission: repeat schema checks publicly, repeat checks on reference hardware, deploy the verified image with persistent job storage and the exact evaluation key, test through the public URL, grant judges repository access, record the 15-minute walkthrough as an unlisted YouTube video, and update the maximum-five-page report PDF. Use `docs/submission-checklist.md` to record evidence and final URLs. No public-host or independent-holdout claims should be made until verified.
+**Human review.** The system recommends human review when primary confidence is below 0.5 or the message has three or fewer words. Confidence is the model probability for the returned label, including after a rule override, and it is not independently calibrated.
+
+**Tests.** The automated suite has 47 tests. They cover:
+
+- authentication on protected routes,
+- input errors and output structure,
+- issue precedence and result ordering,
+- idempotency, job status, pagination, and deletion,
+- contract validation against the supplied OpenAPI schemas and the organizer's draft-2020-12 JSON Schemas.
+
+On 10 October 2026, 46 tests passed locally. The one remaining test needs the Vercel Queue SDK, which is not installed in the local Python 3.8 environment. A Postman collection (`postman/`) repeats the judge-style checks against either the local or the hosted environment.
+
+**Limitations.** These scores come from synthetic workshop data. The judges' unseen holdout is the independent evaluation. Sinhala and Tamil content has not been reviewed by native speakers, and ambiguous short messages (for example, "badu nati una") still need clarification.
+
+## 5. Deployment and verification evidence
+
+| Check | Result |
+| --- | --- |
+| Public `/health` (10 Oct 2026) | `ok`, model `tf-phase2-drive-2.1.0` loaded |
+| Missing key on `/predict` and `/predict/batch` | HTTP 401 |
+| Valid key: `/predict` and `/predict/batch` | Passed on the public host |
+| Hosted async job, 2,001 tickets | **Did not complete within 600 s** (10 Oct 2026); the queue worker needs investigation |
+| Local async jobs | 5,000 tickets with ordered results; health and live predictions stayed responsive |
+| Offline container (`--network none`) | Health ready in 1.414 s; 100-ticket sync and 2,001-ticket async jobs passed |
+
+We ran the container checks on Docker Desktop, not on the organizers' reference hardware. The Docker image is the fallback evaluation path if the hosted queue cannot finish large jobs in time.
+
+**Remaining before final submission:**
+
+1. Fix and re-verify hosted async jobs of 2,001–5,000 tickets.
+2. Keep the exact evaluation key active throughout judging.
+3. Grant judges access to the private GitHub repository.
+4. Upload the refreshed 15-minute walkthrough as an unlisted YouTube video.
+
+Evidence and final links are tracked in `docs/submission-checklist.md`.
