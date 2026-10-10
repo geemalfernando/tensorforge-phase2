@@ -36,7 +36,7 @@ Classification uses locally trained TF-IDF pipelines with logistic regression an
 - cancellation and discard,
 - 24-hour result retention.
 
-Jobs are processed in chunks of 100 tickets. Locally and in Docker, an in-process background worker does this work. On Vercel, the API publishes the job ID to the `tensorforge-batch-jobs` queue, and the `app/batch_worker.py` subscriber processes it. Jobs interrupted by a restart are marked failed.
+Jobs are processed in chunks of 100 tickets. Locally and in Docker, an in-process background worker does this work. On Vercel, which has no long-lived worker, the status and results polls process the job under a Postgres advisory lock (see section 5). Jobs interrupted by a restart are marked failed.
 
 **Model** (`artifacts/model.joblib`). The model is loaded once at startup. Preprocessing builds features from the channel, the optional language hint, the subject, and the text. It applies Unicode NFC normalization, masks synthetic reference IDs, and strips quoted past correspondence. Three pipelines then predict the primary category, the secondary category, and urgency. Narrow precedence rules and a fixed category→team map produce the final, contract-shaped prediction.
 
@@ -114,17 +114,18 @@ On 10 October 2026, 46 tests passed locally. The one remaining test needs the Ve
 | Public `/health` (10 Oct 2026) | `ok`, model `tf-phase2-drive-2.1.0` loaded |
 | Missing key on `/predict` and `/predict/batch` | HTTP 401 |
 | Valid key: `/predict` and `/predict/batch` | Passed on the public host |
-| Hosted async job, 2,001 tickets | **Did not complete within 600 s** (10 Oct 2026); the queue worker needs investigation |
+| Hosted async jobs, 2,001 and 5,000 tickets | Passed with ordered results (10 Oct 2026); 5,000 tickets finished on the first status poll |
 | Local async jobs | 5,000 tickets with ordered results; health and live predictions stayed responsive |
 | Offline container (`--network none`) | Health ready in 1.414 s; 100-ticket sync and 2,001-ticket async jobs passed |
 
-We ran the container checks on Docker Desktop, not on the organizers' reference hardware. The Docker image is the fallback evaluation path if the hosted queue cannot finish large jobs in time.
+We ran the container checks on Docker Desktop, not on the organizers' reference hardware.
+
+**Hosted job processing.** The first hosted check found that Vercel deployed no queue consumer, so jobs stayed queued and filled the four-job limit. Hosted jobs are now processed by the status polls that the contract already requires. A Postgres advisory lock stops two polls from processing the same job, and a full queue is drained before a submission is rejected. Local and Docker deployments still use the background worker.
 
 **Remaining before final submission:**
 
-1. Fix and re-verify hosted async jobs of 2,001–5,000 tickets.
-2. Keep the exact evaluation key active throughout judging.
-3. Grant judges access to the private GitHub repository.
-4. Upload the refreshed 15-minute walkthrough as an unlisted YouTube video.
+1. Keep the exact evaluation key active throughout judging.
+2. Grant judges access to the private GitHub repository.
+3. Upload the refreshed 15-minute walkthrough as an unlisted YouTube video.
 
 Evidence and final links are tracked in `docs/submission-checklist.md`.

@@ -63,7 +63,7 @@
   <rect x="606" y="244" width="548" height="88" rx="8" fill="#fff" stroke="#67e8f9"/>
   <text x="620" y="268" class="t">Job workers (chunks of 100 tickets)</text>
   <text x="620" y="288" class="s">Local / Docker: in-process background worker thread</text>
-  <text x="620" y="306" class="s">Vercel: queue topic tensorforge-batch-jobs → app/batch_worker.py subscriber</text>
+  <text x="620" y="306" class="s">Vercel: status polls process the job (Postgres advisory lock)</text>
   <text x="620" y="322" class="s">Interrupted jobs marked failed on restart; results kept 24 h</text>
 
   <path class="ln" d="M540,132 H588"/>
