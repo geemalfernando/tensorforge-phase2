@@ -38,6 +38,8 @@ class JobManager:
         self.executor = None if self.queue_mode else ThreadPoolExecutor(
             max_workers=1, thread_name_prefix="batch-job"
         )
+        # Hosted jobs run inside polling requests, so persist the growing results less often.
+        self.save_every = 1000 if self.queue_mode else CHUNK_SIZE
         self._initialize()
 
     @contextmanager
@@ -263,6 +265,36 @@ class JobManager:
             cursor = connection.execute("DELETE FROM jobs WHERE job_id=?", (job_id,))
             return cursor.rowcount > 0
 
+    def advance(self, job_id: str) -> None:
+        """Hosted mode: finish an active job inside the request that polls it.
+
+        Vercel has no long-lived worker, so polling drives the job forward. A
+        transaction-scoped advisory lock (safe behind a transaction pooler)
+        stops concurrent polls from processing the same job twice.
+        """
+        if not self.queue_mode:
+            return
+        if not self.postgres:
+            self._run_job(job_id)
+            return
+        with self._connect() as lock_connection:
+            locked = lock_connection.execute(
+                "SELECT pg_try_advisory_xact_lock(hashtext(?))", (job_id,)
+            ).fetchone()[0]
+            if locked:
+                self._run_job(job_id)
+
+    def drain(self) -> None:
+        """Hosted mode: finish the oldest active jobs so a full queue can accept work."""
+        if not self.queue_mode:
+            return
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT job_id FROM jobs WHERE status IN ('queued', 'running') ORDER BY created_at"
+            ).fetchall()
+        for row in rows:
+            self.advance(row["job_id"])
+
     def _run_job(self, job_id: str) -> None:
         with self.lock, self._connect() as connection:
             row = connection.execute(
@@ -282,13 +314,17 @@ class JobManager:
 
         try:
             for start in range(processed, len(tickets), CHUNK_SIZE):
-                with self.lock:
-                    current = self._get_row(job_id)
-                    if current is None or current["status"] != "running":
-                        return
+                if start == processed:
+                    with self.lock:
+                        current = self._get_row(job_id)
+                        if current is None or current["status"] != "running":
+                            return
                 predictions.extend(
                     self.model.predict_many(tickets[start : start + CHUNK_SIZE])
                 )
+                if len(predictions) - processed < self.save_every and len(predictions) < len(tickets):
+                    continue
+                processed = len(predictions)
                 with self.lock, self._connect() as connection:
                     current = connection.execute(
                         "SELECT status FROM jobs WHERE job_id=?", (job_id,)

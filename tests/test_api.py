@@ -175,6 +175,42 @@ def test_vercel_batch_submission_publishes_an_idempotent_queue_message(client, m
     ]
 
 
+def test_hosted_jobs_finish_when_polled_without_a_queue_consumer(client, monkeypatch):
+    import sys
+    import types
+
+    manager = main.jobs
+    assert manager is not None
+    monkeypatch.setattr(manager, "queue_mode", True)
+    monkeypatch.setattr(manager, "executor", None)
+    monkeypatch.setattr("app.jobs.MAX_ACTIVE_JOBS", 1)
+
+    # The queue accepts the message, but no subscriber ever consumes it.
+    async def send(*args, **kwargs):
+        return None
+
+    vercel = types.ModuleType("vercel")
+    vercel.queue = types.ModuleType("vercel.queue")
+    vercel.queue.send = send
+    monkeypatch.setitem(sys.modules, "vercel", vercel)
+    monkeypatch.setitem(sys.modules, "vercel.queue", vercel.queue)
+
+    tickets = [ticket("hosted-{}".format(index)) for index in range(250)]
+    first = client.post("/batch/jobs", json={"tickets": tickets}, headers=headers())
+    assert first.status_code == 202
+    # A full queue is drained instead of rejecting the new job.
+    second = client.post("/batch/jobs", json={"tickets": tickets[:5]}, headers=headers())
+    assert second.status_code == 202
+    assert client.get("/batch/jobs/" + first.json()["job_id"], headers=headers()).json()["status"] == "succeeded"
+
+    status = client.get("/batch/jobs/" + second.json()["job_id"], headers=headers()).json()
+    assert status["status"] == "succeeded" and status["processed"] == 5
+    results = client.get(
+        "/batch/jobs/{}/results".format(first.json()["job_id"]), headers=headers()
+    ).json()
+    assert [p["ticket_id"] for p in results["predictions"]] == [t["ticket_id"] for t in tickets]
+
+
 def test_predictions_stay_closed_when_api_key_is_unset(client, monkeypatch):
     monkeypatch.delenv("API_KEY")
     response = client.post(

@@ -466,6 +466,9 @@ async def submit_batch_job(request: Request):
             [{"field": "Idempotency-Key", "issue": "must be at most 128 characters"}],
         )
     status, accepted = manager.submit(tickets or [], idempotency_key)
+    if not accepted and manager.queue_mode:
+        await run_in_threadpool(manager.drain)
+        status, accepted = manager.submit(tickets or [], idempotency_key)
     if not accepted:
         return error_response(
             429,
@@ -504,6 +507,8 @@ async def get_batch_job(job_id: str, request: Request):
     if denied is not None:
         return denied
     manager = _job_manager()
+    if manager is not None and manager.queue_mode:
+        await run_in_threadpool(manager.advance, job_id)
     status, expired = manager.get_status(job_id) if manager else (None, False)
     if expired:
         return error_response(410, "job_expired", "Job results have expired.")
@@ -548,6 +553,8 @@ async def get_batch_job_results(job_id: str, request: Request):
             [{"field": "offset/limit", "issue": "is outside the allowed range"}],
         )
     manager = _job_manager()
+    if manager is not None and manager.queue_mode:
+        await run_in_threadpool(manager.advance, job_id)
     result, state = (
         manager.get_results(job_id, offset, limit)
         if manager
